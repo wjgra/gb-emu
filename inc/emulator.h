@@ -2,9 +2,9 @@
 #define  _GB_EMU_EMULATOR_H_
 
 #include "..\inc\cpu.h"
-#include "..\inc\mmu.h"
+#include "..\inc\memory_map.h"
 
-class GBEmulator{
+class GBEmulator final{
 public:
     bool start();
 private:

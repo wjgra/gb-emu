@@ -27,30 +27,27 @@ bool Test::start(){
 bool Test::testSystemEndianness(){
     uint16_t word = 0x1234;
     uint8_t* mLower = reinterpret_cast<uint8_t*>(&word);
-    if (*mLower != 0x34 || *(mLower + 1) != 0x12){
-        return EXIT_FAILURE;
-    }
-    else{
-        return EXIT_SUCCESS;
-    }
+    return (*mLower != 0x34 || *(mLower + 1) != 0x12);
 }
 
 bool Test::testReadHybridRegister(){
     Register reg(0x12, 0x34);
-    if (reg != 0x1234){
-        return EXIT_FAILURE;
-    }
-    else{
-        return EXIT_SUCCESS;
-    }
+    return reg != 0x1234;
 }
 
 bool Test::testReadIndivRegister(){
     Register reg(0x1234);
-    if(reg.lowerByte != 0x34 || reg.upperByte != 0x12){
-        return EXIT_FAILURE;
-    }
-    else{
-        return EXIT_SUCCESS;
-    }
+    return (reg.lowerByte != 0x34 || reg.upperByte != 0x12);
+}
+
+bool Test::testByteRW(){
+    MemoryMap memUnit;
+    memUnit.writeByte(0x1234, 0x56);
+    return memUnit.readByte(0x1234) != 0x56;
+}
+
+bool Test::testWordRW(){
+    MemoryMap memUnit;
+    memUnit.writeWord(0x1234, 0x5678);
+    return memUnit.readWord(0x1234) != 0x5678;
 }

@@ -1,10 +1,13 @@
 #ifndef _GB_EMU_CPU_H_
 #define  _GB_EMU_CPU_H_
 
+#include "..\inc\memory_map.h"
+
 #include <cstdint>
 #include <iostream>
+#include <iomanip>
 
-struct Register{
+struct Register final{
     uint8_t upperByte;
     uint8_t lowerByte;
     Register();
@@ -14,11 +17,12 @@ struct Register{
     operator uint16_t() const;
 };
 
-class CPU{
+class CPU final{
 public:
     CPU(); // Constructor w/ initial register state?
+    bool start();
 private:
-    // MMU memory;
+    MemoryMap memoryMap;
     Register AF, BC, DE, HL;
     uint8_t &A = AF.lowerByte;
     uint8_t &F = AF.upperByte;
@@ -32,10 +36,20 @@ private:
     uint16_t SP; // consider making Register type
     uint16_t PC;
 
+    uint8_t clockT, clockM; // technically these are each 16bit, but with only upperByte exposed
+
     uint16_t executeNextOpcode();
+    uint16_t executeOpcode(uint8_t opcode);
 
     // Instruction set - return type is #(cycles to execute opcode)
-    uint16_t NOP(uint16_t address); // NOP (0x00)
+    uint16_t NOP(); // NOP (0x00)
+
+    /* template <Register CPU::*reg> // can use template here, but can only specialise in the .cpp!
+    uint16_t loadReg(uint16_t add){
+        this->*reg = add;
+        return 4;
+    } */
+    bool halted = false;
 };
 
 #endif

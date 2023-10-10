@@ -39,3 +39,7 @@
 *.js
 *.wasm
 *.data
+
+# Gameboy binaries
+input/*
+*.bin

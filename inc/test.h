@@ -6,7 +6,7 @@
 #include <vector>
 #include <cmath>
 
-class Test{
+class Test final{
 public:
     bool start();
 private:
@@ -19,6 +19,8 @@ private:
         {"System endianness", testSystemEndianness},
         {"Read hybrid (16-bit) register", testReadHybridRegister},
         {"Read individual (8-bit) register", testReadIndivRegister},
+        {"Memory unit byte r/w", testByteRW},
+        {"Memory uint word r/w", testWordRW}
     };
     // CPU/Register tests
     bool testSystemEndianness();
@@ -27,6 +29,8 @@ private:
     // Opcode tests
     
     // MMU tests
+    bool testByteRW();
+    bool testWordRW();
 };
 
 #endif
