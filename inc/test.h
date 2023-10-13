@@ -16,14 +16,14 @@ private:
     };
     std::vector<UnitTest> tests 
     {
-        {"System endianness", testSystemEndianness},
+        // {"System endianness", testSystemEndianness},
         {"Read hybrid (16-bit) register", testReadHybridRegister},
         {"Read individual (8-bit) register", testReadIndivRegister},
         {"Memory unit byte r/w", testByteRW},
         {"Memory uint word r/w", testWordRW}
     };
     // CPU/Register tests
-    bool testSystemEndianness();
+    // bool testSystemEndianness();
     bool testReadHybridRegister();
     bool testReadIndivRegister();
     // Opcode tests

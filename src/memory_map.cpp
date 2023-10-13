@@ -3,7 +3,7 @@
 uint16_t constexpr static UPPER_BYTEMASK = 0xFF00;
 uint16_t constexpr static LOWER_BYTEMASK = 0x00FF;
 
-MemoryMap::MemoryMap() : memory{}{
+MemoryMap::MemoryMap() : memory(0x10000, 0){
 }
 
 uint8_t MemoryMap::readByte(uint16_t address){
@@ -11,7 +11,7 @@ uint8_t MemoryMap::readByte(uint16_t address){
 }
 
 uint16_t MemoryMap::readWord(uint16_t address){
-    return  (readByte(address) << 8) + readByte(address + 1);
+    return  (readByte(address + 1) << 8) + readByte(address);
 }
 
 void MemoryMap::writeByte(uint16_t address, uint8_t value){
@@ -19,8 +19,8 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
 }
 
 void MemoryMap::writeWord(uint16_t address, uint16_t value){
-    writeByte(address, value >> 8);
-    writeByte(address + 1, value & LOWER_BYTEMASK);
+    writeByte(address + 1, value >> 8);
+    writeByte(address, value & LOWER_BYTEMASK);
 }
 
 bool MemoryMap::loadBootProgram(std::string path){

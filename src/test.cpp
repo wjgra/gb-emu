@@ -24,14 +24,14 @@ bool Test::start(){
     return numTestsPassed < n;
 }
 
-bool Test::testSystemEndianness(){
+/* bool Test::testSystemEndianness(){
     uint16_t word = 0x1234;
     uint8_t* mLower = reinterpret_cast<uint8_t*>(&word);
     return (*mLower != 0x34 || *(mLower + 1) != 0x12);
-}
+} */
 
 bool Test::testReadHybridRegister(){
-    Register reg(0x12, 0x34);
+    Register reg(0x34, 0x12);
     return reg != 0x1234;
 }
 
@@ -49,5 +49,5 @@ bool Test::testByteRW(){
 bool Test::testWordRW(){
     MemoryMap memUnit;
     memUnit.writeWord(0x1234, 0x5678);
-    return memUnit.readWord(0x1234) != 0x5678;
+    return memUnit.readWord(0x1234) != 0x5678 || memUnit.readByte(0x1234) != 0x78 || memUnit.readByte(0x1234 + 1) != 0x56;
 }

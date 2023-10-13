@@ -8,10 +8,10 @@
 #include <iomanip>
 
 struct Register final{
-    uint8_t upperByte;
     uint8_t lowerByte;
+    uint8_t upperByte; // GB is little endian, so should really be other way around, but this is only relevant for testSystemEndianness...
     Register();
-    Register(uint8_t upperByte, uint8_t lowerByte);
+    Register(uint8_t lowerByte, uint8_t upperByte);
     Register(uint16_t val);
     Register(Register const& other);
     operator uint16_t() const;
@@ -24,16 +24,16 @@ public:
 private:
     MemoryMap memoryMap;
     Register AF, BC, DE, HL;
-    uint8_t &A = AF.lowerByte;
-    uint8_t &F = AF.upperByte;
-    uint8_t &B = BC.lowerByte;
-    uint8_t &C = BC.upperByte;
-    uint8_t &D = DE.lowerByte;
-    uint8_t &E = DE.upperByte;
-    uint8_t &H = HL.lowerByte;
-    uint8_t &L = HL.upperByte;
+    uint8_t &A = AF.upperByte;
+    uint8_t &F = AF.lowerByte;
+    uint8_t &B = BC.upperByte;
+    uint8_t &C = BC.lowerByte;
+    uint8_t &D = DE.upperByte;
+    uint8_t &E = DE.lowerByte;
+    uint8_t &H = HL.upperByte;
+    uint8_t &L = HL.lowerByte;
 
-    uint16_t SP; // consider making Register type
+    Register SP; // consider making Register type
     uint16_t PC;
 
     uint8_t clockT, clockM; // technically these are each 16bit, but with only upperByte exposed
@@ -44,11 +44,19 @@ private:
     // Instruction set - return type is #(cycles to execute opcode)
     uint16_t NOP(); // NOP (0x00)
 
-    /* template <Register CPU::*reg> // can use template here, but can only specialise in the .cpp!
-    uint16_t loadReg(uint16_t add){
-        this->*reg = add;
-        return 4;
-    } */
+    template <Register CPU::*reg> uint16_t loadRegisterFromAddress(uint16_t address);
+    void writeWordToRegister();
+    void readWordFromRegister();
+
+    uint16_t readWordAtPC();
+    uint8_t readByteAtPC();
+    uint16_t LDrrnn(Register& target); // load word at PC to given register
+
+    uint16_t XORr(uint8_t& reg); //  maybe a wrapper for byte would be useful for type safety
+
+    void printOpcode(uint8_t opcode);
+    
+
     bool halted = false;
 };
 

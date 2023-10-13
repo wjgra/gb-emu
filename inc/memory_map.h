@@ -2,10 +2,12 @@
 #define  _GB_EMU_MEMORY_MAP_H_
 
 #include <cstdint>
-#include <array>
+// #include <array>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <string>
 
 class MemoryMap final{
 public:
@@ -16,7 +18,8 @@ public:
     void writeWord(uint16_t address, uint16_t value);
     bool loadBootProgram(std::string path);
 private:
-    std::array<uint8_t, 0x10000> memory;
+    //std::array<uint8_t, 0x10000> memory;
+    std::vector<uint8_t> memory;
 };
 
 #endif
