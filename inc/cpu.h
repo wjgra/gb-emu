@@ -7,16 +7,27 @@
 #include <iostream>
 #include <iomanip>
 
+struct HalfRegister final{
+    uint8_t byte;
+    HalfRegister();
+    HalfRegister(uint8_t byte);
+    operator uint8_t() const;
+    HalfRegister& operator ^=(uint8_t rhs);
+    HalfRegister& operator |=(uint8_t rhs);
+    HalfRegister& operator &=(uint8_t rhs);
+};
 struct Register final{
-    uint8_t lowerByte;
-    uint8_t upperByte; // GB is little endian, so should really be other way around, but this is only relevant for testSystemEndianness...
+    HalfRegister lowerByte;
+    HalfRegister upperByte; // GB is little endian, so should really be other way around, but this is only relevant for testSystemEndianness...
     Register();
     Register(uint8_t lowerByte, uint8_t upperByte);
     Register(uint16_t val);
-    Register(Register const& other);
     operator uint16_t() const;
+    Register& operator--();
+    Register operator--(int);
+    Register& operator++();
+    Register operator++(int);
 };
-
 class CPU final{
 public:
     CPU(); // Constructor w/ initial register state?
@@ -24,40 +35,46 @@ public:
 private:
     MemoryMap memoryMap;
     Register AF, BC, DE, HL;
-    uint8_t &A = AF.upperByte;
-    uint8_t &F = AF.lowerByte;
-    uint8_t &B = BC.upperByte;
-    uint8_t &C = BC.lowerByte;
-    uint8_t &D = DE.upperByte;
-    uint8_t &E = DE.lowerByte;
-    uint8_t &H = HL.upperByte;
-    uint8_t &L = HL.lowerByte;
+    HalfRegister &A = AF.upperByte;
+    HalfRegister &F = AF.lowerByte;
+    HalfRegister &B = BC.upperByte;
+    HalfRegister &C = BC.lowerByte;
+    HalfRegister &D = DE.upperByte;
+    HalfRegister &E = DE.lowerByte;
+    HalfRegister &H = HL.upperByte;
+    HalfRegister &L = HL.lowerByte;
 
-    Register SP; // consider making Register type
+    Register SP;
     uint16_t PC;
 
     uint8_t clockT, clockM; // technically these are each 16bit, but with only upperByte exposed
 
     uint16_t executeNextOpcode();
     uint16_t executeOpcode(uint8_t opcode);
+    uint16_t executeCBOpcode(uint8_t opcode);
 
     // Instruction set - return type is #(cycles to execute opcode)
     uint16_t NOP(); // NOP (0x00)
 
-    template <Register CPU::*reg> uint16_t loadRegisterFromAddress(uint16_t address);
-    void writeWordToRegister();
-    void readWordFromRegister();
-
     uint16_t readWordAtPC();
     uint8_t readByteAtPC();
-    uint16_t LDrrnn(Register& target); // load word at PC to given register
+    uint16_t LDrrnn(Register& targetReg);
+    uint16_t LDnnr(uint16_t targetAddress, HalfRegister dataReg);
+    uint16_t XORAr(HalfRegister reg); //  maybe a wrapper for byte would be useful for type safety
 
-    uint16_t XORr(uint8_t& reg); //  maybe a wrapper for byte would be useful for type safety
+
+    // CB
+    uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
+    uint16_t BITbnn(uint8_t bit, uint16_t address);
+
 
     void printOpcode(uint8_t opcode);
-    
+    void printOpcodeInfo(uint8_t opcode);
 
     bool halted = false;
+    bool verbose = true;
+    std::vector<std::string> opcodeInfo;
+    std::vector<std::string> opcodeCBInfo;
 };
 
 #endif
