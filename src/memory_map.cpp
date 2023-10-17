@@ -24,14 +24,13 @@ void MemoryMap::writeWord(uint16_t address, uint16_t value){
 }
 
 bool MemoryMap::loadBootProgram(std::string path){
-    std::ifstream fileStream(path.c_str());
+    std::ifstream fileStream(path.c_str(), std::ios_base::binary);
     if (!fileStream){
         return false;
     }
-    for (int i = 0 ; i < 0x10000 ; ++i){
-        uint8_t thisByte;
-        fileStream >> std::hex >> std::setw(2) >> thisByte;
-        writeByte(i, thisByte);
+    std::vector<uint8_t> data((std::istreambuf_iterator<char>(fileStream)), (std::istreambuf_iterator<char>()));
+    for (std::size_t i = 0 ; i < data.size() ; ++i){
+        writeByte(i, data[i]);
     }
     return true;
 }

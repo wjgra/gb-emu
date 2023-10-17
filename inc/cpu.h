@@ -60,19 +60,29 @@ private:
     uint8_t readByteAtPC();
     uint16_t LDrrnn(Register& targetReg);
     uint16_t LDnnr(uint16_t targetAddress, HalfRegister dataReg);
+    uint16_t LDrnn(HalfRegister& targetReg, uint16_t dataAddress);
     uint16_t XORAr(HalfRegister reg); //  maybe a wrapper for byte would be useful for type safety
 
+    uint16_t LDru8(HalfRegister& targetReg);
 
     // CB
     uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
     uint16_t BITbnn(uint8_t bit, uint16_t address);
 
+    uint16_t EI();
+
+
+    // uint16_t JPnn(uint16_t address);
+    uint16_t JRe();
+    uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
     void printOpcode(uint8_t opcode);
     void printOpcodeInfo(uint8_t opcode);
+    void printOpcodeCBInfo(uint8_t opcode);
 
     bool halted = false;
     bool verbose = true;
+    bool interruptsEnabled = false;
     std::vector<std::string> opcodeInfo;
     std::vector<std::string> opcodeCBInfo;
 };
