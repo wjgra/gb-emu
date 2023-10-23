@@ -13,20 +13,32 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo = std::vector<std::string>(0x100, "");
     opcodeInfo[0x00] = "NOP";
     opcodeInfo[0x01] = "LD BC from (PC)";
-
+    opcodeInfo[0x02] = "LD (BC) from A";
     opcodeInfo[0x03] = "INC BC";
     opcodeInfo[0x04] = "INC B";
+
+    opcodeInfo[0x06] = "LD B from (PC)";
+
+    opcodeInfo[0x08] = "LD (PC) from SP";
+
+    opcodeInfo[0x0A] = "LD A from (BC)";
 
     opcodeInfo[0x0C] = "INC C";
 
     opcodeInfo[0x0E] = "LD C from (PC)";
 
     opcodeInfo[0x11] = "LD DE from (PC)";
-
+    opcodeInfo[0x12] = "LD (DE) from A";
     opcodeInfo[0x13] = "INC DE";
     opcodeInfo[0x14] = "INC D";
 
+    opcodeInfo[0x16] = "LD D from (PC)";
+
+    opcodeInfo[0x1A] = "LD A from (DE)";
+
     opcodeInfo[0x1C] = "INC E";
+
+    opcodeInfo[0x1E] = "LD E from (PC)";
 
     opcodeInfo[0x18] = "JR by int8_t offset";
     
@@ -38,20 +50,96 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x23] = "INC HL";
     opcodeInfo[0x24] = "INC H";
 
-    opcodeInfo[0x2C] = "INC L";
+    opcodeInfo[0x26] = "LD H from (PC)";
 
+
+
+    opcodeInfo[0x2A] = "LD A from (HL++)";
+
+    opcodeInfo[0x2C] = "INC L";
 
     opcodeInfo[0x2E] = "LD L from (PC)";
 
     opcodeInfo[0x31] = "LD SP from (PC)";
     opcodeInfo[0x32] = "LD (HL--) from A";
     opcodeInfo[0x33] = "INC SP";
-    opcodeInfo[0x24] = "INC (HL)";
+    opcodeInfo[0x34] = "INC (HL)";
 
-    opcodeInfo[0x2C] = "INC A";
+    opcodeInfo[0x36] = "LD (HL) from (PC)";
 
+
+
+
+
+    opcodeInfo[0x3C] = "INC A";
 
     opcodeInfo[0x3E] = "LD A from (PC)";
+
+    opcodeInfo[0x40] = "LD B from B";
+    opcodeInfo[0x41] = "LD B from C";
+    opcodeInfo[0x42] = "LD B from D";
+    opcodeInfo[0x43] = "LD B from E";
+    opcodeInfo[0x44] = "LD B from H";
+    opcodeInfo[0x45] = "LD B from L";
+    opcodeInfo[0x46] = "LD B from (HL)";
+    opcodeInfo[0x47] = "LD B from A";
+    opcodeInfo[0x48] = "LD C from B";
+    opcodeInfo[0x49] = "LD C from C";
+    opcodeInfo[0x4A] = "LD C from D";
+    opcodeInfo[0x4B] = "LD C from E";
+    opcodeInfo[0x4C] = "LD C from H";
+    opcodeInfo[0x4D] = "LD C from L";
+    opcodeInfo[0x4E] = "LD C from (HL)";
+    opcodeInfo[0x4F] = "LD C from A";
+    opcodeInfo[0x50] = "LD D from B";
+    opcodeInfo[0x51] = "LD D from C";
+    opcodeInfo[0x52] = "LD D from D";
+    opcodeInfo[0x53] = "LD D from E";
+    opcodeInfo[0x54] = "LD D from H";
+    opcodeInfo[0x55] = "LD D from L";
+    opcodeInfo[0x56] = "LD D from (HL)";
+    opcodeInfo[0x57] = "LD D from A";
+    opcodeInfo[0x58] = "LD E from B";
+    opcodeInfo[0x59] = "LD E from C";
+    opcodeInfo[0x5A] = "LD E from D";
+    opcodeInfo[0x5B] = "LD E from E";
+    opcodeInfo[0x5C] = "LD E from H";
+    opcodeInfo[0x5D] = "LD E from L";
+    opcodeInfo[0x5E] = "LD E from (HL)";
+    opcodeInfo[0x5F] = "LD E from A";
+    opcodeInfo[0x60] = "LD H from B";
+    opcodeInfo[0x61] = "LD H from C";
+    opcodeInfo[0x62] = "LD H from D";
+    opcodeInfo[0x63] = "LD H from E";
+    opcodeInfo[0x64] = "LD H from H";
+    opcodeInfo[0x65] = "LD H from L";
+    opcodeInfo[0x66] = "LD H from (HL)";
+    opcodeInfo[0x67] = "LD H from A";
+    opcodeInfo[0x68] = "LD L from B";
+    opcodeInfo[0x69] = "LD L from C";
+    opcodeInfo[0x6A] = "LD L from D";
+    opcodeInfo[0x6B] = "LD L from E";
+    opcodeInfo[0x6C] = "LD L from H";
+    opcodeInfo[0x6D] = "LD L from L";
+    opcodeInfo[0x6E] = "LD L from (HL)";
+    opcodeInfo[0x6F] = "LD L from A";
+    opcodeInfo[0x70] = "LD (HL) from B";
+    opcodeInfo[0x71] = "LD (HL) from C";
+    opcodeInfo[0x72] = "LD (HL) from D";
+    opcodeInfo[0x73] = "LD (HL) from E";
+    opcodeInfo[0x74] = "LD (HL) from H";
+    opcodeInfo[0x75] = "LD (HL) from L";
+
+    opcodeInfo[0x77] = "LD (HL) from A";
+    opcodeInfo[0x78] = "LD A from B";
+    opcodeInfo[0x79] = "LD A from C";
+    opcodeInfo[0x7A] = "LD A from D";
+    opcodeInfo[0x7B] = "LD A from E";
+    opcodeInfo[0x7C] = "LD A from H";
+    opcodeInfo[0x7D] = "LD A from L";
+    opcodeInfo[0x7E] = "LD A from (HL)";
+    opcodeInfo[0x7F] = "LD A from A";
+
 
     opcodeInfo[0xA8] = "XOR A with B";
     opcodeInfo[0xA9] = "XOR A with C";
@@ -65,12 +153,24 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
 
     opcodeInfo[0xCB] = "CB-prefixed opcode! See next line";
 
+    opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
 
-    opcodeInfo[0xE2] = "LD (0xFF00+C) with A";
+    opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
+
+    opcodeInfo[0xEA] = "LD (u16) from A";
 
 
-    opcodeInfo[0xF2] = "LD A with (0xFF00+C)";
 
+
+
+    opcodeInfo[0xF0] = "LD A from (0xFF00+u8)";
+
+    opcodeInfo[0xF2] = "LD A from (0xFF00+C)";
+
+
+    // opcodeInfo[0xF8] = "LD ????;
+    opcodeInfo[0xF9] = "LD SP from HL";
+    opcodeInfo[0xFA] = "LD A from (u16)";
     opcodeInfo[0xFB] = "Enable interrupts";
 
     opcodeCBInfo = std::vector<std::string>(0x100, "");
@@ -264,14 +364,28 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return NOP();
             break;
         case 0x01:
-            return LDrrnn(BC);
+            return LDrru16(BC);
             break;
-
+        case 0x02:
+            return LDnnr(BC, A); 
+            break;
         case 0x03:
             return INCrr(BC);
             break;
         case 0x04:
             return INCr(B);
+            break;
+
+        case 0x06:
+            return LDru8(B);
+            break;
+
+        case 0x08:
+            return LDu16rr(SP);
+            break;
+
+        case 0x0A:
+            return LDrnn(A, BC); 
             break;
 
         case 0x0C:
@@ -284,7 +398,10 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
 
         case 0x11:
-            return LDrrnn(DE);
+            return LDrru16(DE);
+            break;
+        case 0x12:
+            return LDnnr(DE, A);
             break;
         case 0x13:
             return INCrr(DE);
@@ -293,12 +410,20 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return INCr(D);
             break;
 
-        case 0x1C:
-            return INCr(E);
+        case 0x16:
+            return LDru8(D); 
             break;
-
+        
         case 0x18:
             return JRe();
+            break;
+
+        case 0x1A:
+            return LDrnn(A, DE); 
+            break;
+
+        case 0x1C:
+            return INCr(E);
             break;
 
         case 0x1E:
@@ -309,7 +434,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return JRcce(FLAG_ZERO, false);
             break;
         case 0x21:
-            return LDrrnn(HL);
+            return LDrru16(HL);
             break;
         case 0x22:
             return LDnnr(HL++, A);
@@ -321,6 +446,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return INCr(H);
             break;
 
+        
+        case 0x26:
+            return LDru8(H);
+            break;
+
+        case 0x2A:
+            return LDrnn(A, HL++);
+            break;
+
+
         case 0x2C:
             return INCr(L);
             break;
@@ -331,7 +466,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
 
         case 0x31:
-            return LDrrnn(SP);
+            return LDrru16(SP);
             break;
         case 0x32:
             return LDnnr(HL--, A);
@@ -343,6 +478,15 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return INCnn(HL);
             break;
 
+        case 0x36:
+            return LDrnn(A, HL--);
+            break;
+
+        case 0x3A:
+            return LDrnn(A, HL--);
+            break;
+
+
         case 0x3C:
             return INCr(A);
             break;
@@ -351,6 +495,198 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return LDru8(A);
             break;
 
+        case 0x40:
+            return LDrr(B, B);
+            break;
+        case 0x41:
+            return LDrr(B, C);
+            break;
+        case 0x42:
+            return LDrr(B, D);
+            break;
+        case 0x43:
+            return LDrr(B, E);
+            break;
+        case 0x44:
+            return LDrr(B, H);
+            break;
+        case 0x45:
+            return LDrr(B, L);
+            break;
+        case 0x46:
+            return LDrnn(B, HL);
+            break;
+        case 0x47:
+            return LDrr(B, A);
+            break;
+        case 0x48:
+            return LDrr(C, B);
+            break;
+        case 0x49:
+            return LDrr(C, C);
+            break;
+        case 0x4A:
+            return LDrr(C, D);
+            break;
+        case 0x4B:
+            return LDrr(C, E);
+            break;
+        case 0x4C:
+            return LDrr(C, H);
+            break;
+        case 0x4D:
+            return LDrr(C, L);
+            break;
+        case 0x4E:
+            return LDrnn(C, HL);
+            break;
+        case 0x4F:
+            return LDrr(C, A);
+            break;
+        case 0x50:
+            return LDrr(D, B);
+            break;
+        case 0x51:
+            return LDrr(D, C);
+            break;
+        case 0x52:
+            return LDrr(D, D);
+            break;
+        case 0x53:
+            return LDrr(D, E);
+            break;
+        case 0x54:
+            return LDrr(D, H);
+            break;
+        case 0x55:
+            return LDrr(D, L);
+            break;
+        case 0x56:
+            return LDrnn(D, HL);
+            break;
+        case 0x57:
+            return LDrr(D, A);
+            break;
+        case 0x58:
+            return LDrr(E, B);
+            break;
+        case 0x59:
+            return LDrr(E, C);
+            break;
+        case 0x5A:
+            return LDrr(E, D);
+            break;
+        case 0x5B:
+            return LDrr(E, E);
+            break;
+        case 0x5C:
+            return LDrr(E, H);
+            break;
+        case 0x5D:
+            return LDrr(E, L);
+            break;
+        case 0x5E:
+            return LDrnn(E, HL);
+            break;
+        case 0x5F:
+            return LDrr(E, A);
+            break;
+        case 0x60:
+            return LDrr(H, B);
+            break;
+        case 0x61:
+            return LDrr(H, C);
+            break;
+        case 0x62:
+            return LDrr(H, D);
+            break;
+        case 0x63:
+            return LDrr(H, E);
+            break;
+        case 0x64:
+            return LDrr(H, H);
+            break;
+        case 0x65:
+            return LDrr(H, L);
+            break;
+        case 0x66:
+            return LDrnn(H, HL);
+            break;
+        case 0x67:
+            return LDrr(H, A);
+            break;
+        case 0x68:
+            return LDrr(L, B);
+            break;
+        case 0x69:
+            return LDrr(L, C);
+            break;
+        case 0x6A:
+            return LDrr(L, D);
+            break;
+        case 0x6B:
+            return LDrr(L, E);
+            break;
+        case 0x6C:
+            return LDrr(L, H);
+            break;
+        case 0x6D:
+            return LDrr(L, L);
+            break;
+        case 0x6E:
+            return LDrnn(L, HL);
+            break;
+        case 0x6F:
+            return LDrr(L, A);
+            break;
+        case 0x70:
+            return LDnnr(HL, B);
+            break;
+        case 0x71:
+            return LDnnr(HL, C);
+            break;
+        case 0x72:
+            return LDnnr(HL, D);
+            break;
+        case 0x73:
+            return LDnnr(HL, E);
+            break;
+        case 0x74:
+            return LDnnr(HL, H);
+            break;
+        case 0x75:
+            return LDnnr(HL, L);
+            break;
+
+
+
+        case 0x77:
+            return LDnnr(HL, A);
+            break;
+        case 0x78:
+            return LDrr(A, B);
+            break;
+        case 0x79:
+            return LDrr(A, C);
+            break;
+        case 0x7A:
+            return LDrr(A, D);
+            break;
+        case 0x7B:
+            return LDrr(A, E);
+            break;
+        case 0x7C:
+            return LDrr(A, H);
+            break;
+        case 0x7D:
+            return LDrr(A, L);
+            break;
+        case 0x7E:
+            return LDrnn(A, HL);
+            break;
+        case 0x7F:
+            return LDrr(A, A);
+            break;
 
         case 0xA8:
             return XORAr(B);
@@ -381,18 +717,34 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
         case 0xCB:
             return executeCBOpcode(memoryMap.readByte(PC++)); 
             break;
-
+        
+        case 0xE0:
+            return LDFFu8r(A);
+            break;
 
         case 0xE2:
             return LDnnr(0xFF00 + C, A);
             break;
 
+        case 0xEA:
+            return LDu16r(A);
+            break;
+
+        case 0xF0:
+            return LDrFFu8(A);
 
         case 0xF2:
             return LDrnn(A, 0xFF00 + C);
             break;
 
+        // case 0xF8????
 
+        case 0xF9:
+            return LDrrrr(SP, HL);
+            break;
+        case 0xFA:
+            return LDru16(A);
+            break;
         case 0xFB:
             return EI(); 
             break;
@@ -614,9 +966,9 @@ uint16_t CPU::NOP(){
     return 4; // add const??
 }
 
-// LDrrnn (0xN1, N = 0, 1, 2, 3)
+// LDrru16 (0xN1, N = 0, 1, 2, 3)
 // Loads word at (PC) to given register
-uint16_t CPU::LDrrnn(Register& targetReg){
+uint16_t CPU::LDrru16(Register& targetReg){
     targetReg = readWordAtPC();
     return 12;
 }
@@ -634,9 +986,44 @@ uint16_t CPU::LDrnn(HalfRegister& targetReg, uint16_t dataAddress){
     return 8;
 }
 
+uint16_t CPU::LDFFu8r(HalfRegister& dataReg){
+    memoryMap.writeByte(0xFF00 + readByteAtPC(), dataReg);
+    return 12;
+}
+
 uint16_t CPU::LDru8(HalfRegister& targetReg){
     targetReg = readByteAtPC();
     return 8;
+}
+
+uint16_t CPU::LDu16rr(Register& dataReg){
+    memoryMap.writeWord(readWordAtPC(), dataReg);
+    return 20;
+}
+
+uint16_t CPU::LDu16r(HalfRegister& dataReg){
+    memoryMap.writeByte(readByteAtPC(), dataReg);
+    return 16;
+}
+
+uint16_t CPU::LDrr(HalfRegister& targetReg, HalfRegister& dataReg){
+    targetReg = dataReg;
+    return 4;
+}
+
+uint16_t CPU::LDrFFu8(HalfRegister& targetReg){
+    targetReg = memoryMap.readByte(0xFF00 + readByteAtPC());
+    return 12;
+}
+
+uint16_t CPU::LDrrrr(Register& targetReg, Register& dataReg){
+    targetReg = dataReg;
+    return 8;
+}
+
+uint16_t CPU::LDru16(HalfRegister& targetReg){
+    targetReg = memoryMap.readByte(readWordAtPC());
+    return 16;
 }
 
 // XORAr (0xA8 - 0xAD, 0xAF)
@@ -662,6 +1049,9 @@ uint16_t CPU::INCrr(Register& reg){
 
 uint16_t CPU::INCr(HalfRegister& reg){
     ++reg;
+    setFlag(FLAG_ZERO);
+    clearFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
     return 4;
 }
 
@@ -669,6 +1059,9 @@ uint16_t CPU::INCr(HalfRegister& reg){
 uint16_t CPU::INCnn(uint16_t targetAddress){
     uint8_t temp = memoryMap.readByte(targetAddress);
     memoryMap.writeWord(targetAddress, temp + 1);
+    setFlag(FLAG_ZERO);
+    clearFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
     return 12;
 }
 

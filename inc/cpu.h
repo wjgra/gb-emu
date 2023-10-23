@@ -64,10 +64,17 @@ private:
     uint16_t readWordAtPC();
     uint8_t readByteAtPC();
 
-    uint16_t LDrrnn(Register& targetReg);
+    uint16_t LDrru16(Register& targetReg);
     uint16_t LDnnr(uint16_t targetAddress, HalfRegister dataReg);
     uint16_t LDrnn(HalfRegister& targetReg, uint16_t dataAddress);
     uint16_t LDru8(HalfRegister& targetReg);
+    uint16_t LDu16rr(Register& dataReg);
+    uint16_t LDu16r(HalfRegister& dataReg);
+    uint16_t LDrr(HalfRegister& targetReg, HalfRegister& dataReg);
+    uint16_t LDFFu8r(HalfRegister& dataReg);
+    uint16_t LDrFFu8(HalfRegister& targetReg);
+    uint16_t LDrrrr(Register& targetReg, Register& dataReg);
+    uint16_t LDru16(HalfRegister& targetReg);
 
     uint16_t XORAr(HalfRegister reg); //  maybe a wrapper for byte would be useful for type safety
 
