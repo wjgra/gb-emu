@@ -19,6 +19,7 @@ private:
         // {"System endianness", testSystemEndianness},
         {"Read hybrid (16-bit) register", testReadHybridRegister},
         {"Read individual (8-bit) register", testReadIndivRegister},
+        {"Test bit of individual register", testBitIndivRegister},
         {"Memory unit byte r/w", testByteRW},
         {"Memory uint word r/w", testWordRW}
     };
@@ -26,8 +27,10 @@ private:
     // bool testSystemEndianness();
     bool testReadHybridRegister();
     bool testReadIndivRegister();
+    bool testBitIndivRegister();
     // Opcode tests
-    
+
+
     // MMU tests
     bool testByteRW();
     bool testWordRW();

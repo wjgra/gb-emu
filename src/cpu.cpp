@@ -14,9 +14,19 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x00] = "NOP";
     opcodeInfo[0x01] = "LD BC from (PC)";
 
+    opcodeInfo[0x03] = "INC BC";
+    opcodeInfo[0x04] = "INC B";
+
+    opcodeInfo[0x0C] = "INC C";
+
     opcodeInfo[0x0E] = "LD C from (PC)";
 
     opcodeInfo[0x11] = "LD DE from (PC)";
+
+    opcodeInfo[0x13] = "INC DE";
+    opcodeInfo[0x14] = "INC D";
+
+    opcodeInfo[0x1C] = "INC E";
 
     opcodeInfo[0x18] = "JR by int8_t offset";
     
@@ -25,11 +35,21 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x20] = "JR if NZ by int8_t offset";
     opcodeInfo[0x21] = "LD HL from (PC)";
     opcodeInfo[0x22] = "LD (HL++) from A";
+    opcodeInfo[0x23] = "INC HL";
+    opcodeInfo[0x24] = "INC H";
+
+    opcodeInfo[0x2C] = "INC L";
+
 
     opcodeInfo[0x2E] = "LD L from (PC)";
 
     opcodeInfo[0x31] = "LD SP from (PC)";
     opcodeInfo[0x32] = "LD (HL--) from A";
+    opcodeInfo[0x33] = "INC SP";
+    opcodeInfo[0x24] = "INC (HL)";
+
+    opcodeInfo[0x2C] = "INC A";
+
 
     opcodeInfo[0x3E] = "LD A from (PC)";
 
@@ -159,6 +179,33 @@ HalfRegister& HalfRegister::operator&=(uint8_t rhs){
     return *this;
 }
 
+HalfRegister& HalfRegister::operator--(){
+    *this = HalfRegister((uint8_t(*this) - 1));
+    return *this;
+}
+
+HalfRegister HalfRegister::operator--(int){
+    HalfRegister temp {*this};
+    operator--();
+    return temp;
+}
+
+HalfRegister& HalfRegister::operator++(){
+    *this = HalfRegister((uint8_t(*this) + 1));
+    return *this;
+}
+
+HalfRegister HalfRegister::operator++(int){
+    HalfRegister temp {*this};
+    operator++();
+    return temp;
+}
+
+// Test nth bit in register
+bool HalfRegister::testBit(uint8_t bit) const{
+    return ((0b1 << bit) & byte);
+}
+
 Register::Register() : lowerByte{}, upperByte{}{
 }
 
@@ -207,6 +254,7 @@ uint16_t CPU::executeNextOpcode(){
 uint16_t CPU::executeOpcode(uint8_t opcode){
     if (verbose){
         std::cout << "\n";
+        // std::cout << "HL: " << HL << ", ";
         printOpcode(opcode);
         std::cout << ": ";
         printOpcodeInfo(opcode);
@@ -219,6 +267,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
             return LDrrnn(BC);
             break;
 
+        case 0x03:
+            return INCrr(BC);
+            break;
+        case 0x04:
+            return INCr(B);
+            break;
+
+        case 0x0C:
+            return INCr(C);
+            break;
 
         case 0x0E:
             return LDru8(C);
@@ -227,6 +285,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
         case 0x11:
             return LDrrnn(DE);
+            break;
+        case 0x13:
+            return INCrr(DE);
+            break;
+        case 0x14:
+            return INCr(D);
+            break;
+
+        case 0x1C:
+            return INCr(E);
             break;
 
         case 0x18:
@@ -246,6 +314,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
         case 0x22:
             return LDnnr(HL++, A);
             break;
+        case 0x23:
+            return INCrr(HL);
+            break;
+        case 0x24:
+            return INCr(H);
+            break;
+
+        case 0x2C:
+            return INCr(L);
+            break;
 
         case 0x2E:
             return LDru8(L);
@@ -258,7 +336,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
         case 0x32:
             return LDnnr(HL--, A);
             break;
+        case 0x33:
+            return INCrr(SP);
+            break;
+        case 0x34:
+            return INCnn(HL);
+            break;
 
+        case 0x3C:
+            return INCr(A);
+            break;
 
         case 0x3E:
             return LDru8(A);
@@ -534,24 +621,6 @@ uint16_t CPU::LDrrnn(Register& targetReg){
     return 12;
 }
 
-// XORAr (0xA8 - 0xAD, 0xAF)
-// XORs A with given half register and stores result in A
-uint16_t CPU::XORAr(HalfRegister reg){
-    A ^= reg;
-    // set flags??
-    if (A == 0){
-        F |= FLAG_ZERO;
-    }
-    else{
-        F &= !FLAG_ZERO;
-    }
-    F &= !FLAG_SUBTRACT;
-    F &= !FLAG_HALFCARRY;
-    F &= !FLAG_CARRY;
-    return 4;
-}
-// issue: make set/unset flag fn?
-
 // LDnnr (0x32)
 // Loads byte in dataReg to (targetAddress)
 uint16_t CPU::LDnnr(uint16_t targetAddress, HalfRegister dataReg){
@@ -565,16 +634,53 @@ uint16_t CPU::LDrnn(HalfRegister& targetReg, uint16_t dataAddress){
     return 8;
 }
 
+uint16_t CPU::LDru8(HalfRegister& targetReg){
+    targetReg = readByteAtPC();
+    return 8;
+}
 
-uint16_t CPU::BITbr(uint8_t bit, HalfRegister reg){
-    if ((0x1 << bit) & reg){
-        F &= !FLAG_ZERO;
+// XORAr (0xA8 - 0xAD, 0xAF)
+// XORs A with given half register and stores result in A
+uint16_t CPU::XORAr(HalfRegister reg){
+    A ^= reg;
+    if (A == 0){
+        setFlag(FLAG_ZERO);
     }
     else{
-        F |= FLAG_ZERO;
+        clearFlag(FLAG_ZERO);
     }
-    F |= FLAG_HALFCARRY;
-    F &= !FLAG_SUBTRACT;
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 4;
+}
+
+uint16_t CPU::INCrr(Register& reg){
+    ++reg;
+    return 8;
+}
+
+uint16_t CPU::INCr(HalfRegister& reg){
+    ++reg;
+    return 4;
+}
+
+// 8-bit INC at address
+uint16_t CPU::INCnn(uint16_t targetAddress){
+    uint8_t temp = memoryMap.readByte(targetAddress);
+    memoryMap.writeWord(targetAddress, temp + 1);
+    return 12;
+}
+
+uint16_t CPU::BITbr(uint8_t bit, HalfRegister reg){
+    if (reg.testBit(bit)){
+        clearFlag(FLAG_ZERO);
+    }
+    else{
+        setFlag(FLAG_ZERO);
+    }
+    setFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
     return 8;
 }
 
@@ -587,10 +693,6 @@ uint16_t CPU::EI(){
     return 4;
 }
 
-uint16_t CPU::LDru8(HalfRegister& targetReg){
-    targetReg = readByteAtPC();
-    return 8;
-}
 
 /* uint16_t CPU::JPnn(uint16_t address){
 
@@ -622,6 +724,14 @@ uint16_t CPU::readWordAtPC(){
     auto temp = memoryMap.readWord(PC);
     PC += 2;
     return temp;
+}
+
+void CPU::setFlag(uint8_t flag){
+    F |= flag;
+}
+
+void CPU::clearFlag(uint8_t flag){
+    F &= ~flag;
 }
 
 void CPU::printOpcode(uint8_t opcode){

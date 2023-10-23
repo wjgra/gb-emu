@@ -49,5 +49,16 @@ bool Test::testByteRW(){
 bool Test::testWordRW(){
     MemoryMap memUnit;
     memUnit.writeWord(0x1234, 0x5678);
-    return memUnit.readWord(0x1234) != 0x5678 || memUnit.readByte(0x1234) != 0x78 || memUnit.readByte(0x1234 + 1) != 0x56;
+    return memUnit.readWord(0x1234) != 0x5678 || 
+           memUnit.readByte(0x1234) != 0x78 || 
+           memUnit.readByte(0x1234 + 1) != 0x56;
+}
+
+bool Test::testBitIndivRegister(){
+    bool res = false;
+    for (int i = 0 ; i < 8 ; ++i){
+        HalfRegister reg{uint8_t(0b1 << i)};
+        res = res || !reg.testBit(i);
+    }
+    return res;
 }
