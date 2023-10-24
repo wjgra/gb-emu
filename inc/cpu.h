@@ -15,6 +15,8 @@ struct HalfRegister final{
     HalfRegister& operator ^=(uint8_t rhs);
     HalfRegister& operator |=(uint8_t rhs);
     HalfRegister& operator &=(uint8_t rhs);
+    HalfRegister& operator+=(uint8_t rhs);
+    HalfRegister& operator-=(uint8_t rhs);
     HalfRegister& operator--();
     HalfRegister operator--(int);
     HalfRegister& operator++();
@@ -32,6 +34,8 @@ struct Register final{
     Register operator--(int);
     Register& operator++();
     Register operator++(int);
+    Register& operator+=(uint16_t rhs);
+    Register& operator-=(uint16_t rhs);
 };
 class CPU final{
 public:
@@ -76,6 +80,10 @@ private:
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
 
+
+    uint16_t PUSHrr(Register& dataReg);
+    uint16_t CALLnn();
+
     uint16_t XORAr(HalfRegister reg); //  maybe a wrapper for byte would be useful for type safety
 
     uint16_t INCrr(Register& reg);
@@ -88,6 +96,13 @@ private:
 
     uint16_t EI();
 
+    // Rotate - old carry flag rotated in, carry flag set to rotated out value 
+    uint16_t RLr(HalfRegister& reg);
+    uint16_t RRr(HalfRegister& reg);
+
+    // Rotate circular - a cyclic permutation, carry flag set as before
+    uint16_t RLCr(HalfRegister& reg);
+    uint16_t RRCr(HalfRegister& reg);
 
     // uint16_t JPnn(uint16_t address);
     uint16_t JRe();
@@ -95,13 +110,14 @@ private:
 
     void setFlag(uint8_t flag);
     void clearFlag(uint8_t flag);
+    bool isFlagSet(uint8_t flag);
 
     void printOpcode(uint8_t opcode);
     void printOpcodeInfo(uint8_t opcode);
     void printOpcodeCBInfo(uint8_t opcode);
 
     bool halted = false;
-    bool verbose = true;
+    bool verbose = false;
     bool interruptsEnabled = false;
     std::vector<std::string> opcodeInfo;
     std::vector<std::string> opcodeCBInfo;
