@@ -18,7 +18,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x04] = "INC B";
 
     opcodeInfo[0x06] = "LD B from (PC)";
-
+    opcodeInfo[0x07] = "RLCA";
     opcodeInfo[0x08] = "LD (PC) from SP";
 
     opcodeInfo[0x0A] = "LD A from (BC)";
@@ -26,6 +26,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x0C] = "INC C";
 
     opcodeInfo[0x0E] = "LD C from (PC)";
+    opcodeInfo[0x0F] = "RRCA";
 
     opcodeInfo[0x11] = "LD DE from (PC)";
     opcodeInfo[0x12] = "LD (DE) from A";
@@ -33,17 +34,15 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x14] = "INC D";
 
     opcodeInfo[0x16] = "LD D from (PC)";
+    opcodeInfo[0x17] = "RLA";
+    opcodeInfo[0x18] = "JR by int8_t offset";
 
     opcodeInfo[0x1A] = "LD A from (DE)";
 
     opcodeInfo[0x1C] = "INC E";
 
     opcodeInfo[0x1E] = "LD E from (PC)";
-
-    opcodeInfo[0x18] = "JR by int8_t offset";
-    
-    opcodeInfo[0x1E] = "LD E from (PC)";
-
+    opcodeInfo[0x1F] = "RRA";
     opcodeInfo[0x20] = "JR if NZ by int8_t offset";
     opcodeInfo[0x21] = "LD HL from (PC)";
     opcodeInfo[0x22] = "LD (HL++) from A";
@@ -413,6 +412,10 @@ uint16_t CPU::executeNextOpcode(){
     }
     else{
         uint8_t opcode = memoryMap.readByte(PC++);
+        recentOpcodes.push_back(opcode);
+        while (recentOpcodes.size() > maxOpcodeLookback){
+            recentOpcodes.pop_front();
+        }
         return executeOpcode(opcode);
     }
 }
@@ -433,7 +436,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x04: return INCr(B); break;
 
     case 0x06: return LDru8(B); break;
-
+    case 0x07: return RLCA(); break;
     case 0x08: return LDu16rr(SP); break;
 
     case 0x0A: return LDrnn(A, BC); break;
@@ -441,14 +444,14 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x0C: return INCr(C); break;
 
     case 0x0E: return LDru8(C); break;
-
+    case 0x0F: return RRCA(); break;
     case 0x11: return LDrru16(DE); break;
     case 0x12: return LDnnr(DE, A); break;
     case 0x13: return INCrr(DE); break;
     case 0x14: return INCr(D); break;
 
     case 0x16: return LDru8(D); break;
-
+    case 0x17: return RLA(); break;
     case 0x18: return JRe(); break;
 
     case 0x1A: return LDrnn(A, DE); break;
@@ -456,7 +459,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x1C: return INCr(E); break;
 
     case 0x1E: return LDru8(E); break;
-
+    case 0x1F: return RRA(); break;
     case 0x20: return JRcce(FLAG_ZERO, false); break;
     case 0x21: return LDrru16(HL); break;
     case 0x22: return LDnnr(HL++, A); break;
@@ -581,20 +584,19 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
         // case 0xF8????
 
-        case 0xF9:     return LDrrrr(SP, HL);
-            break;
-        case 0xFA:     return LDru16(A);
-            break;
-        case 0xFB:     return EI(); 
-            break;
-        default:     if (!verbose){
-                std::cout << "Encountered unimplemented opcode ";
-                printOpcode(opcode);
-                std::cout << "\n";
+        case 0xF9: return LDrrrr(SP, HL); break;
+        case 0xFA: return LDru16(A); break;
+        case 0xFB: return EI(); break;
+        default:     
+            if (!verbose){
+                std::cout << "Error: encountered unimplemented opcode\n\t...";
+                for (auto op : recentOpcodes){
+                    std::cout << "\n\t";
+                    printOpcode(op);
+                    std::cout << ": " << opcodeInfo[op];
+                }   
             }
-            else{
-                std::cout << "unimplemented!\n";
-            }
+            std::cout << "unimplemented!\n";
             return 0;// throw; // Exceptions TBC
         break;
     }    
@@ -706,16 +708,17 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x7D: return BITbr(7, L); break;
     // 0x7E
     case 0x7F: return BITbr(7, A); break;
-    default: if (!verbose)
-        {
-                std::cout << "Encountered unimplemented CB opcode ";
-                printOpcode(opcode);
-                std::cout << "\n";
-            }
-            else{
-                std::cout << "unimplemented!\n";
-            }
-            return 0;// throw; // Exceptions TBC
+    default:
+        if (!verbose){
+            std::cout << "Error: encountered unimplemented CB opcode\n\t...";
+            for (auto op : recentOpcodes){
+                std::cout << "\n\t";
+                printOpcode(op);
+                std::cout << ": " << opcodeCBInfo[op];
+            }   
+        }
+        std::cout << "unimplemented!\n";
+        return 0;// throw; // Exceptions TBC
         break;
     }  
 
@@ -937,6 +940,31 @@ uint16_t CPU::RRCr(HalfRegister& reg){
     clearFlag(FLAG_SUBTRACT);
     return 8;
 }
+
+uint16_t CPU::RLCA(){
+    RLCr(A);
+    clearFlag(FLAG_ZERO);
+    return 4;
+}
+
+uint16_t CPU::RLA(){
+    RLr(A);
+    clearFlag(FLAG_ZERO);
+    return 4;
+}
+
+uint16_t CPU::RRCA(){
+    RRCr(A);
+    clearFlag(FLAG_ZERO);
+    return 4;
+}
+
+uint16_t CPU::RRA(){
+    RRr(A);
+    clearFlag(FLAG_ZERO);
+    return 4;
+}
+
 
 /* uint16_t CPU::JPnn(uint16_t address){
 

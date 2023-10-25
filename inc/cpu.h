@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <iostream>
 #include <iomanip>
+#include <deque>
 
 struct HalfRegister final{
     uint8_t byte;
@@ -104,6 +105,12 @@ private:
     uint16_t RLCr(HalfRegister& reg);
     uint16_t RRCr(HalfRegister& reg);
 
+    // Special rotations
+    uint16_t RLCA();
+    uint16_t RLA();
+    uint16_t RRCA();
+    uint16_t RRA();
+
     // uint16_t JPnn(uint16_t address);
     uint16_t JRe();
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
@@ -121,6 +128,9 @@ private:
     bool interruptsEnabled = false;
     std::vector<std::string> opcodeInfo;
     std::vector<std::string> opcodeCBInfo;
+
+    unsigned int const maxOpcodeLookback = 8;
+    std::deque<uint8_t> recentOpcodes;
 };
 
 #endif
