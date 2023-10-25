@@ -81,15 +81,29 @@ private:
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
 
-
+    uint16_t POPrr(Register& targetReg);
     uint16_t PUSHrr(Register& dataReg);
     uint16_t CALLnn();
 
-    uint16_t XORAr(HalfRegister reg); //  maybe a wrapper for byte would be useful for type safety
+    uint16_t XORAr(HalfRegister reg);
 
     uint16_t INCrr(Register& reg);
     uint16_t INCr(HalfRegister& reg);
     uint16_t INCnn(uint16_t targetAddress);
+
+    uint16_t DECrr(Register& reg);
+    uint16_t DECr(HalfRegister& reg);
+    uint16_t DECnn(uint16_t targetAddress);
+
+    uint16_t ADDrrrr(Register& x, Register& y);
+    uint16_t ADDrr(HalfRegister& x, HalfRegister& y);
+    uint16_t ADDrnn(HalfRegister& x, uint16_t targetAddress);
+    uint16_t ADDru8(HalfRegister& reg);
+    // uint16_t ADDSPi8();
+
+    uint16_t SUBrr(HalfRegister& x, HalfRegister& y);
+    uint16_t SUBrnn(HalfRegister& x, uint16_t targetAddress);
+    uint16_t SUBru8(HalfRegister& reg);
 
     // CB
     uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
@@ -115,7 +129,10 @@ private:
     uint16_t JRe();
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
+    uint16_t RET();
+
     void setFlag(uint8_t flag);
+    void setFlag(uint8_t flag, bool value);
     void clearFlag(uint8_t flag);
     bool isFlagSet(uint8_t flag);
 
@@ -129,6 +146,8 @@ private:
     std::vector<std::string> opcodeInfo;
     std::vector<std::string> opcodeCBInfo;
 
+    void addOpcodeToLog(uint8_t opcode);
+    void printRecentOpcodes();
     unsigned int const maxOpcodeLookback = 8;
     std::deque<uint8_t> recentOpcodes;
 };
