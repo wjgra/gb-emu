@@ -55,7 +55,7 @@ private:
     HalfRegister &L = HL.lowerByte;
 
     Register SP;
-    uint16_t PC;
+    Register PC;
 
     uint8_t clockT, clockM; // technically these are each 16bit, but with only upperByte exposed
 
@@ -104,6 +104,11 @@ private:
     uint16_t SUBrr(HalfRegister& x, HalfRegister& y);
     uint16_t SUBrnn(HalfRegister& x, uint16_t targetAddress);
     uint16_t SUBru8(HalfRegister& reg);
+
+    uint16_t CPrr(HalfRegister& x, HalfRegister& y);
+    uint16_t CPrnn(HalfRegister& reg, uint16_t targetAddress);
+    uint16_t CPru8(HalfRegister& reg);
+    uint16_t CPL();
 
     // CB
     uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);

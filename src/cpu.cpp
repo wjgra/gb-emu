@@ -35,7 +35,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x15] = "DEC D";
     opcodeInfo[0x16] = "LD D from (PC)";
     opcodeInfo[0x17] = "RLA";
-    opcodeInfo[0x18] = "JR by int8_t offset";
+    opcodeInfo[0x18] = "JR by i8 offset";
     opcodeInfo[0x09] = "ADD HL, DE";
     opcodeInfo[0x1A] = "LD A from (DE)";
     opcodeInfo[0x1B] = "DEC DE";
@@ -43,7 +43,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x1D] = "DEC E";
     opcodeInfo[0x1E] = "LD E from (PC)";
     opcodeInfo[0x1F] = "RRA";
-    opcodeInfo[0x20] = "JR if NZ by int8_t offset";
+    opcodeInfo[0x20] = "JR by i8 offset if NZ";
     opcodeInfo[0x21] = "LD HL from (PC)";
     opcodeInfo[0x22] = "LD (HL++) from A";
     opcodeInfo[0x23] = "INC HL";
@@ -51,14 +51,15 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x25] = "DEC H";
     opcodeInfo[0x26] = "LD H from (PC)";
 
-
+    opcodeInfo[0x28] = "JR by i8 offset if Z";
     opcodeInfo[0x29] = "ADD HL, HL";
     opcodeInfo[0x2A] = "LD A from (HL++)";
     opcodeInfo[0x2B] = "DEC HL";
     opcodeInfo[0x2C] = "INC L";
     opcodeInfo[0x2D] = "DEC L";
     opcodeInfo[0x2E] = "LD L from (PC)";
-
+    opcodeInfo[0x2F] = "CPL";
+    opcodeInfo[0x30] = "JR by i8 offset if NC";
     opcodeInfo[0x31] = "LD SP from (PC)";
     opcodeInfo[0x32] = "LD (HL--) from A";
     opcodeInfo[0x33] = "INC SP";
@@ -66,7 +67,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x35] = "DEC (HL)";
     opcodeInfo[0x36] = "LD (HL) from (PC)";
 
-
+    opcodeInfo[0x38] = "JR by i8 offset if C";
     opcodeInfo[0x39] = "ADD HL, SP";
 
     opcodeInfo[0x3B] = "DEC SP";
@@ -158,7 +159,6 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0x95] = "SUB A, L";
     opcodeInfo[0x96] = "SUB A, (HL)";
     opcodeInfo[0x97] = "SUB A, A";
-
     opcodeInfo[0xA8] = "XOR A with B";
     opcodeInfo[0xA9] = "XOR A with C";
     opcodeInfo[0xAA] = "XOR A with D";
@@ -167,6 +167,14 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0xAD] = "XOR A with L";
     // opcodeInfo[0xAE] = "XOR A with (HL)";
     opcodeInfo[0xAF] = "XOR A with A";
+    opcodeInfo[0xB8] = "CP A, B";
+    opcodeInfo[0xB9] = "CP A, C";
+    opcodeInfo[0xBA] = "CP A, D";
+    opcodeInfo[0xBB] = "CP A, E";
+    opcodeInfo[0xBC] = "CP A, H";
+    opcodeInfo[0xBD] = "CP A, L";
+    opcodeInfo[0xBE] = "CP A, (HL)";
+    opcodeInfo[0xBF] = "CP A, A";
 
     opcodeInfo[0xC1] = "POP stack to BC";
 
@@ -189,6 +197,7 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
 
+
     opcodeInfo[0xE5] = "PUSH HL to stack";
 
     // opcodeInfo[0xE8] = "ADD SP, i8";
@@ -210,8 +219,10 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeInfo[0xFA] = "LD A from (u16)";
     opcodeInfo[0xFB] = "Enable interrupts";
 
+
+    opcodeInfo[0xFE] = "CP A, u8";
+
     opcodeCBInfo = std::vector<std::string>(0x100, "");
-    // RLC/RRC
     opcodeCBInfo[0x00] = "RLC B";
     opcodeCBInfo[0x01] = "RLC C";
     opcodeCBInfo[0x02] = "RLC D";
@@ -228,7 +239,6 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     opcodeCBInfo[0x0D] = "RRC L";
     opcodeCBInfo[0x0E] = "RRC (HL)";
     opcodeCBInfo[0x0F] = "RRC A";
-    // RL/RR
     opcodeCBInfo[0x10] = "RL B";
     opcodeCBInfo[0x11] = "RL C";
     opcodeCBInfo[0x12] = "RL D";
@@ -425,13 +435,13 @@ Register Register::operator++(int){
 }
 
 Register& Register::operator+=(uint16_t rhs){
-    Register temp = uint16_t() + rhs;
+    Register temp = uint16_t(*this) + rhs;
     *this = temp;
     return *this;
 }
 
 Register& Register::operator-=(uint16_t rhs){
-    Register temp = uint16_t() - rhs;
+    Register temp = uint16_t(*this) - rhs;
     *this = temp;
     return *this;
 }
@@ -456,7 +466,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
         printOpcodeInfo(opcode);
     }
     switch(opcode){
-    case 0x00: return NOP(); break;
+    // case 0x00: return NOP(); break;
     case 0x01: return LDrru16(BC); break;
     case 0x02: return LDnnr(BC, A); break;
     case 0x03: return INCrr(BC); break;
@@ -495,14 +505,15 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x25: return DECr(H); break;
     case 0x26: return LDru8(H); break;
 
-
+    case 0x28: return JRcce(FLAG_ZERO, true); break;
     case 0x29: return ADDrrrr(HL, HL); break;
     case 0x2A: return LDrnn(A, HL++); break;
     case 0x2B: return DECrr(HL); break;
     case 0x2C: return INCr(L); break;
     case 0x2D: return DECr(L); break;
     case 0x2E: return LDru8(L); break;
-
+    case 0x2F: return CPL(); break;
+    case 0x30: return JRcce(FLAG_CARRY, false); break;
     case 0x31: return LDrru16(SP); break;
     case 0x32: return LDnnr(HL--, A); break;
     case 0x33: return INCrr(SP); break;
@@ -510,7 +521,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x35: return DECnn(HL); break;
     case 0x36: return LDrnn(A, HL--); break;
 
-
+    case 0x38: return JRcce(FLAG_CARRY, true); break;
     case 0x39: return ADDrrrr(HL, SP); break;
     case 0x3A: return LDrnn(A, HL--); break;
     case 0x3B: return DECrr(SP); break;
@@ -613,6 +624,16 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     /* case 0xAE: return 0;//XORAnn(HL); break; */
     case 0xAF: return XORAr(A); break;
 
+
+    case 0xB8: return CPrr(A, B); break;
+    case 0xB9: return CPrr(A, C); break;
+    case 0xBA: return CPrr(A, D); break;
+    case 0xBB: return CPrr(A, E); break;
+    case 0xBC: return CPrr(A, H); break;
+    case 0xBD: return CPrr(A, L); break;
+    case 0xBE: return CPrnn(A, HL); break;
+    case 0xBF: return CPrr(A, A); break;
+
     case 0xC1: return POPrr(BC); break;
 
     case 0xC5: return PUSHrr(BC); break;
@@ -647,19 +668,22 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
     case 0xF5: return PUSHrr(AF); break;
 
-        // case 0xF8????
+    // case 0xF8????
 
-        case 0xF9: return LDrrrr(SP, HL); break;
-        case 0xFA: return LDru16(A); break;
-        case 0xFB: return EI(); break;
-        default:     
-            if (!verbose){
-                std::cout << "Error: encountered unimplemented opcode\n\t...";
-                printRecentOpcodes();   
-            }
-            std::cout << "unimplemented!\n";
-            return 0;// throw; // Exceptions TBC
-        break;
+    case 0xF9: return LDrrrr(SP, HL); break;
+    case 0xFA: return LDru16(A); break;
+    case 0xFB: return EI(); break;
+
+    case 0xFE: return CPru8(A); break;
+
+    default:     
+        if (!verbose){
+            std::cout << "Error: encountered unimplemented opcode\n\t...";
+            printRecentOpcodes();   
+        }
+        std::cout << "unimplemented!\n";
+        return 0;// throw; // Exceptions TBC
+    break;
     }    
 }
 
@@ -823,7 +847,7 @@ uint16_t CPU::LDu16rr(Register& dataReg){
 }
 
 uint16_t CPU::LDu16r(HalfRegister& dataReg){
-    memoryMap.writeByte(readByteAtPC(), dataReg);
+    memoryMap.writeByte(readWordAtPC(), dataReg);
     return 16;
 }
 
@@ -963,6 +987,33 @@ uint16_t CPU::SUBru8(HalfRegister& reg){
     HalfRegister dummyReg{readByteAtPC()};
     SUBrr(reg, dummyReg);
     return 8;
+}
+
+uint16_t CPU::CPrr(HalfRegister& x, HalfRegister& y){
+    setFlag(FLAG_CARRY, ((x & 0xFF) - (y & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((x & 0xF) - (y & 0xF)) & 0x10);
+    setFlag(FLAG_ZERO, x == 0);
+    setFlag(FLAG_SUBTRACT);
+    return 4;
+}
+
+uint16_t CPU::CPrnn(HalfRegister& x, uint16_t targetAddress){
+    HalfRegister dummyReg{memoryMap.readByte(targetAddress)};
+    CPrr(x, dummyReg);
+    return 8;
+}
+
+uint16_t CPU::CPru8(HalfRegister& reg){
+    HalfRegister dummyReg{readByteAtPC()};
+    CPrr(reg, dummyReg);
+    return 8;
+}
+
+uint16_t CPU::CPL(){
+    A = ~A;
+    setFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
+    return 4;
 }
 
 uint16_t CPU::CALLnn(){

@@ -17,17 +17,21 @@ private:
     std::vector<UnitTest> tests 
     {
         // {"System endianness", testSystemEndianness},
-        {"Read hybrid (16-bit) register", testReadHybridRegister},
-        {"Read individual (8-bit) register", testReadIndivRegister},
-        {"Test bit of individual register", testBitIndivRegister},
+        {"Read (16-bit) register", testReadRegister},
+        {"Read half (8-bit) register", testReadHalfRegister},
+        {"Test bit of half register", testBitHalfRegister},
+        {"Test register arithmetic operations", testRegisterOps},
+        {"Test half register arithmetic operations", testHalfRegisterOps},
         {"Memory unit byte r/w", testByteRW},
         {"Memory uint word r/w", testWordRW}
     };
     // CPU/Register tests
     // bool testSystemEndianness();
-    bool testReadHybridRegister();
-    bool testReadIndivRegister();
-    bool testBitIndivRegister();
+    bool testReadRegister();
+    bool testReadHalfRegister();
+    bool testBitHalfRegister();
+    bool testRegisterOps();
+    bool testHalfRegisterOps();
     // Opcode tests
 
 
