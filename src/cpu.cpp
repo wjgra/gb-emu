@@ -327,13 +327,38 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
 }
 
 bool CPU::start(){
-    if (!memoryMap.loadBootProgram(".//input//dmg_boot.bin")){
+    if (!memoryMap.loadBootProgram(".//input//dmg_boot.gb")){
         return EXIT_FAILURE;
     }
+    std::cout << "Loaded boot program\n";
+    if (!memoryMap.loadCartridge(".//input//tetris.gb")){
+        // return EXIT_FAILURE;
+    }
+    else{
+        std::cout << "Loaded cartridge\n";
+    }
+    
     if (verbose){
         std::cout << "Encountered opcodes:";
     }
-    while(executeNextOpcode()){}
+    while(executeNextOpcode()){
+
+        SDL_Event event;
+        while(SDL_PollEvent(&event)){
+            switch(event.type){
+                case SDL_KEYDOWN:
+                    if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+                        printRecentOpcodes();
+                        std::cout << "\n\nPC at exit: 0x" << std::hex << PC << "\n";
+                        return EXIT_SUCCESS;
+                    }
+                    break;
+                default: break;
+            }
+        }
+
+
+    }
     return EXIT_SUCCESS;
 }
 
@@ -447,6 +472,13 @@ Register& Register::operator-=(uint16_t rhs){
 }
 
 uint16_t CPU::executeNextOpcode(){
+    if (PC == 0x100){
+        memoryMap.finishBooting();
+    }
+    if (false){
+        printRecentOpcodes();
+        return 0;
+    }
     if (halted){
         return NOP();
     }
@@ -466,7 +498,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
         printOpcodeInfo(opcode);
     }
     switch(opcode){
-    // case 0x00: return NOP(); break;
+    case 0x00: return NOP(); break;
     case 0x01: return LDrru16(BC); break;
     case 0x02: return LDnnr(BC, A); break;
     case 0x03: return INCrr(BC); break;
@@ -902,7 +934,7 @@ uint16_t CPU::INCrr(Register& reg){
 }
 
 uint16_t CPU::INCr(HalfRegister& reg){
-    setFlag(FLAG_HALFCARRY, (((reg & 0xF) + 1) & 0x10) == 0x10);
+    setFlag(FLAG_HALFCARRY, (((reg & 0xF) + 1) & 0x10)/*  == 0x10 */);
     ++reg;
     setFlag(FLAG_ZERO, reg == 0);
     clearFlag(FLAG_SUBTRACT);
@@ -992,7 +1024,7 @@ uint16_t CPU::SUBru8(HalfRegister& reg){
 uint16_t CPU::CPrr(HalfRegister& x, HalfRegister& y){
     setFlag(FLAG_CARRY, ((x & 0xFF) - (y & 0xFF)) & 0x100);
     setFlag(FLAG_HALFCARRY, ((x & 0xF) - (y & 0xF)) & 0x10);
-    setFlag(FLAG_ZERO, x == 0);
+    setFlag(FLAG_ZERO, x - y == 0);
     setFlag(FLAG_SUBTRACT);
     return 4;
 }

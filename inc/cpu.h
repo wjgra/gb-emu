@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <deque>
 
+#include <SDL.h>
+
 struct HalfRegister final{
     uint8_t byte;
     HalfRegister();

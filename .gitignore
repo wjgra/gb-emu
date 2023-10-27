@@ -42,4 +42,5 @@
 
 # Gameboy binaries
 input/*
+*.gb
 *.bin
