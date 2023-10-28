@@ -42,10 +42,15 @@ struct Register final{
 };
 class CPU final{
 public:
-    CPU(); // Constructor w/ initial register state?
-    bool start();
+    CPU(MemoryMap& memMap); // Constructor w/ initial register state?
+    void frame(unsigned int frameTime);
+    void stop();
 private:
-    MemoryMap memoryMap;
+
+    double const maxClockFreq = 4.194304; // MHz
+    uint32_t cyclesSinceLastUpdate = 0;
+
+    MemoryMap& memoryMap;
     Register AF, BC, DE, HL;
     HalfRegister &A = AF.upperByte;
     HalfRegister &F = AF.lowerByte;
@@ -143,12 +148,13 @@ private:
     void clearFlag(uint8_t flag);
     bool isFlagSet(uint8_t flag);
 
+    void initOpcodeInfo();
+
     void printOpcode(uint8_t opcode);
     void printOpcodeInfo(uint8_t opcode);
     void printOpcodeCBInfo(uint8_t opcode);
 
     bool halted = false;
-    bool verbose = false;
     bool interruptsEnabled = false;
     std::vector<std::string> opcodeInfo;
     std::vector<std::string> opcodeCBInfo;

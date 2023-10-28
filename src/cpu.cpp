@@ -8,7 +8,120 @@ uint8_t constexpr static FLAG_SUBTRACT = 0x40;
 uint8_t constexpr static FLAG_HALFCARRY = 0x20;
 uint8_t constexpr static FLAG_CARRY = 0x19;
 
-CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
+HalfRegister::HalfRegister() : byte{}{
+}
+
+HalfRegister::HalfRegister(uint8_t byte) : byte{byte}{
+}
+
+HalfRegister::operator uint8_t() const{
+    return byte;
+}
+
+HalfRegister& HalfRegister::operator^=(uint8_t rhs){
+    byte ^= rhs;
+    return *this;
+}
+
+HalfRegister& HalfRegister::operator|=(uint8_t rhs){
+    byte |= rhs;
+    return *this;
+}
+
+HalfRegister& HalfRegister::operator&=(uint8_t rhs){
+    byte &= rhs;
+    return *this;
+}
+
+HalfRegister& HalfRegister::operator+=(uint8_t rhs){
+    byte += rhs;
+    return *this;
+}
+
+HalfRegister& HalfRegister::operator-=(uint8_t rhs){
+    byte -= rhs;
+    return *this;
+}
+
+HalfRegister& HalfRegister::operator--(){
+    *this = HalfRegister((uint8_t(*this) - 1));
+    return *this;
+}
+
+HalfRegister HalfRegister::operator--(int){
+    HalfRegister temp {*this};
+    operator--();
+    return temp;
+}
+
+HalfRegister& HalfRegister::operator++(){
+    *this = HalfRegister((uint8_t(*this) + 1));
+    return *this;
+}
+
+HalfRegister HalfRegister::operator++(int){
+    HalfRegister temp {*this};
+    operator++();
+    return temp;
+}
+
+// Test nth bit in register
+bool HalfRegister::testBit(uint8_t bit) const{
+    return ((0b1 << bit) & byte);
+}
+
+Register::Register() : lowerByte{}, upperByte{}{
+}
+
+Register::Register(uint8_t lowerByte, uint8_t upperByte) : lowerByte{lowerByte}, upperByte{upperByte}{
+}
+
+Register::Register(uint16_t val) : lowerByte(val & LOWER_BYTEMASK), upperByte(val >> 8){
+}
+
+Register::operator uint16_t() const{
+    return (upperByte << 8) + lowerByte;
+}
+
+Register& Register::operator--(){
+    *this = Register((uint16_t(*this) - 1));
+    return *this;
+}
+
+Register Register::operator--(int){
+    Register temp {*this};
+    operator--();
+    return temp;
+}
+
+Register& Register::operator++(){
+    *this = Register((uint16_t(*this) + 1));
+    return *this;
+}
+
+Register Register::operator++(int){
+    Register temp {*this};
+    operator++();
+    return temp;
+}
+
+Register& Register::operator+=(uint16_t rhs){
+    Register temp = uint16_t(*this) + rhs;
+    *this = temp;
+    return *this;
+}
+
+Register& Register::operator-=(uint16_t rhs){
+    Register temp = uint16_t(*this) - rhs;
+    *this = temp;
+    return *this;
+}
+
+CPU::CPU(MemoryMap& memMap) : memoryMap{memMap}, AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
+    initOpcodeInfo();
+}
+
+void CPU::initOpcodeInfo(){
     // Opcode info for displaying recent instructions
     opcodeInfo = std::vector<std::string>(0x100, "");
     opcodeInfo[0x00] = "NOP";
@@ -323,161 +436,24 @@ CPU::CPU() : AF{}, BC{}, DE{}, HL{}, SP{}, PC{}{
     // BIT 7, (HL)
     opcodeCBInfo[0x7F] = "BIT 7, A";
     // 0x80 - 0xFF
-    
 }
 
-bool CPU::start(){
-    if (!memoryMap.loadBootProgram(".//input//dmg_boot.gb")){
-        return EXIT_FAILURE;
+void CPU::stop(){
+    printRecentOpcodes();
+    std::cout << "\n\nPC at exit: 0x" << std::hex << PC << "\n";
+}
+
+void CPU::frame(unsigned int frameTime){
+    uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
+    while (cyclesSinceLastUpdate < maxCyclesThisFrame){
+        cyclesSinceLastUpdate += executeNextOpcode();
     }
-    std::cout << "Loaded boot program\n";
-    if (!memoryMap.loadCartridge(".//input//tetris.gb")){
-        // return EXIT_FAILURE;
-    }
-    else{
-        std::cout << "Loaded cartridge\n";
-    }
-    
-    if (verbose){
-        std::cout << "Encountered opcodes:";
-    }
-    while(executeNextOpcode()){
-
-        SDL_Event event;
-        while(SDL_PollEvent(&event)){
-            switch(event.type){
-                case SDL_KEYDOWN:
-                    if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-                        printRecentOpcodes();
-                        std::cout << "\n\nPC at exit: 0x" << std::hex << PC << "\n";
-                        return EXIT_SUCCESS;
-                    }
-                    break;
-                default: break;
-            }
-        }
-
-
-    }
-    return EXIT_SUCCESS;
-}
-
-HalfRegister::HalfRegister() : byte{}{
-}
-
-HalfRegister::HalfRegister(uint8_t byte) : byte{byte}{
-}
-
-HalfRegister::operator uint8_t() const{
-    return byte;
-}
-
-HalfRegister& HalfRegister::operator^=(uint8_t rhs){
-    byte ^= rhs;
-    return *this;
-}
-
-HalfRegister& HalfRegister::operator|=(uint8_t rhs){
-    byte |= rhs;
-    return *this;
-}
-
-HalfRegister& HalfRegister::operator&=(uint8_t rhs){
-    byte &= rhs;
-    return *this;
-}
-
-HalfRegister& HalfRegister::operator+=(uint8_t rhs){
-    byte += rhs;
-    return *this;
-}
-
-HalfRegister& HalfRegister::operator-=(uint8_t rhs){
-    byte -= rhs;
-    return *this;
-}
-
-HalfRegister& HalfRegister::operator--(){
-    *this = HalfRegister((uint8_t(*this) - 1));
-    return *this;
-}
-
-HalfRegister HalfRegister::operator--(int){
-    HalfRegister temp {*this};
-    operator--();
-    return temp;
-}
-
-HalfRegister& HalfRegister::operator++(){
-    *this = HalfRegister((uint8_t(*this) + 1));
-    return *this;
-}
-
-HalfRegister HalfRegister::operator++(int){
-    HalfRegister temp {*this};
-    operator++();
-    return temp;
-}
-
-// Test nth bit in register
-bool HalfRegister::testBit(uint8_t bit) const{
-    return ((0b1 << bit) & byte);
-}
-
-Register::Register() : lowerByte{}, upperByte{}{
-}
-
-Register::Register(uint8_t lowerByte, uint8_t upperByte) : lowerByte{lowerByte}, upperByte{upperByte}{
-}
-
-Register::Register(uint16_t val) : lowerByte(val & LOWER_BYTEMASK), upperByte(val >> 8){
-}
-
-Register::operator uint16_t() const{
-    return (upperByte << 8) + lowerByte;
-}
-
-Register& Register::operator--(){
-    *this = Register((uint16_t(*this) - 1));
-    return *this;
-}
-
-Register Register::operator--(int){
-    Register temp {*this};
-    operator--();
-    return temp;
-}
-
-Register& Register::operator++(){
-    *this = Register((uint16_t(*this) + 1));
-    return *this;
-}
-
-Register Register::operator++(int){
-    Register temp {*this};
-    operator++();
-    return temp;
-}
-
-Register& Register::operator+=(uint16_t rhs){
-    Register temp = uint16_t(*this) + rhs;
-    *this = temp;
-    return *this;
-}
-
-Register& Register::operator-=(uint16_t rhs){
-    Register temp = uint16_t(*this) - rhs;
-    *this = temp;
-    return *this;
+    cyclesSinceLastUpdate -= maxCyclesThisFrame;
 }
 
 uint16_t CPU::executeNextOpcode(){
     if (PC == 0x100){
         memoryMap.finishBooting();
-    }
-    if (false){
-        printRecentOpcodes();
-        return 0;
     }
     if (halted){
         return NOP();
@@ -490,352 +466,332 @@ uint16_t CPU::executeNextOpcode(){
 }
 
 uint16_t CPU::executeOpcode(uint8_t opcode){
-    if (verbose){
-        std::cout << "\n";
-        // std::cout << "HL: " << HL << ", ";
-        printOpcode(opcode);
-        std::cout << ": ";
-        printOpcodeInfo(opcode);
-    }
     switch(opcode){
-    case 0x00: return NOP(); break;
-    case 0x01: return LDrru16(BC); break;
-    case 0x02: return LDnnr(BC, A); break;
-    case 0x03: return INCrr(BC); break;
-    case 0x04: return INCr(B); break;
-    case 0x05: return DECr(B); break;
-    case 0x06: return LDru8(B); break;
-    case 0x07: return RLCA(); break;
-    case 0x08: return LDu16rr(SP); break;
-    case 0x09: return ADDrrrr(HL, BC); break;
-    case 0x0A: return LDrnn(A, BC); break;
-    case 0x0B: return DECrr(BC); break;
-    case 0x0C: return INCr(C); break;
-    case 0x0D: return DECr(C); break;
-    case 0x0E: return LDru8(C); break;
-    case 0x0F: return RRCA(); break;
-    case 0x11: return LDrru16(DE); break;
-    case 0x12: return LDnnr(DE, A); break;
-    case 0x13: return INCrr(DE); break;
-    case 0x14: return INCr(D); break;
-    case 0x15: return DECr(D); break;
-    case 0x16: return LDru8(D); break;
-    case 0x17: return RLA(); break;
-    case 0x18: return JRe(); break;
-    case 0x19: return ADDrrrr(HL, DE); break;
-    case 0x1A: return LDrnn(A, DE); break;
-    case 0x1B: return DECrr(DE); break;
-    case 0x1C: return INCr(E); break;
-    case 0x1D: return DECr(E); break;
-    case 0x1E: return LDru8(E); break;
-    case 0x1F: return RRA(); break;
-    case 0x20: return JRcce(FLAG_ZERO, false); break;
-    case 0x21: return LDrru16(HL); break;
-    case 0x22: return LDnnr(HL++, A); break;
-    case 0x23: return INCrr(HL); break;
-    case 0x24: return INCr(H); break;
-    case 0x25: return DECr(H); break;
-    case 0x26: return LDru8(H); break;
+    case 0x00: return NOP();
+    case 0x01: return LDrru16(BC);
+    case 0x02: return LDnnr(BC, A);
+    case 0x03: return INCrr(BC);
+    case 0x04: return INCr(B);
+    case 0x05: return DECr(B);
+    case 0x06: return LDru8(B);
+    case 0x07: return RLCA();
+    case 0x08: return LDu16rr(SP);
+    case 0x09: return ADDrrrr(HL, BC);
+    case 0x0A: return LDrnn(A, BC);
+    case 0x0B: return DECrr(BC);
+    case 0x0C: return INCr(C);
+    case 0x0D: return DECr(C);
+    case 0x0E: return LDru8(C);
+    case 0x0F: return RRCA();
+    case 0x11: return LDrru16(DE);
+    case 0x12: return LDnnr(DE, A);
+    case 0x13: return INCrr(DE);
+    case 0x14: return INCr(D);
+    case 0x15: return DECr(D);
+    case 0x16: return LDru8(D);
+    case 0x17: return RLA();
+    case 0x18: return JRe();
+    case 0x19: return ADDrrrr(HL, DE);
+    case 0x1A: return LDrnn(A, DE);
+    case 0x1B: return DECrr(DE);
+    case 0x1C: return INCr(E);
+    case 0x1D: return DECr(E);
+    case 0x1E: return LDru8(E);
+    case 0x1F: return RRA();
+    case 0x20: return JRcce(FLAG_ZERO, false);
+    case 0x21: return LDrru16(HL);
+    case 0x22: return LDnnr(HL++, A);
+    case 0x23: return INCrr(HL);
+    case 0x24: return INCr(H);
+    case 0x25: return DECr(H);
+    case 0x26: return LDru8(H);
 
-    case 0x28: return JRcce(FLAG_ZERO, true); break;
-    case 0x29: return ADDrrrr(HL, HL); break;
-    case 0x2A: return LDrnn(A, HL++); break;
-    case 0x2B: return DECrr(HL); break;
-    case 0x2C: return INCr(L); break;
-    case 0x2D: return DECr(L); break;
-    case 0x2E: return LDru8(L); break;
-    case 0x2F: return CPL(); break;
-    case 0x30: return JRcce(FLAG_CARRY, false); break;
-    case 0x31: return LDrru16(SP); break;
-    case 0x32: return LDnnr(HL--, A); break;
-    case 0x33: return INCrr(SP); break;
-    case 0x34: return INCnn(HL); break;
-    case 0x35: return DECnn(HL); break;
-    case 0x36: return LDrnn(A, HL--); break;
+    case 0x28: return JRcce(FLAG_ZERO, true);
+    case 0x29: return ADDrrrr(HL, HL);
+    case 0x2A: return LDrnn(A, HL++);
+    case 0x2B: return DECrr(HL);
+    case 0x2C: return INCr(L);
+    case 0x2D: return DECr(L);
+    case 0x2E: return LDru8(L);
+    case 0x2F: return CPL();
+    case 0x30: return JRcce(FLAG_CARRY, false);
+    case 0x31: return LDrru16(SP);
+    case 0x32: return LDnnr(HL--, A);
+    case 0x33: return INCrr(SP);
+    case 0x34: return INCnn(HL);
+    case 0x35: return DECnn(HL);
+    case 0x36: return LDrnn(A, HL--);
 
-    case 0x38: return JRcce(FLAG_CARRY, true); break;
-    case 0x39: return ADDrrrr(HL, SP); break;
-    case 0x3A: return LDrnn(A, HL--); break;
-    case 0x3B: return DECrr(SP); break;
-    case 0x3C: return INCr(A); break;
-    case 0x3D: return DECr(A); break;
-    case 0x3E: return LDru8(A); break;
+    case 0x38: return JRcce(FLAG_CARRY, true);
+    case 0x39: return ADDrrrr(HL, SP);
+    case 0x3A: return LDrnn(A, HL--);
+    case 0x3B: return DECrr(SP);
+    case 0x3C: return INCr(A);
+    case 0x3D: return DECr(A);
+    case 0x3E: return LDru8(A);
 
-    case 0x40: return LDrr(B, B); break;
-    case 0x41: return LDrr(B, C); break;
-    case 0x42: return LDrr(B, D); break;
-    case 0x43: return LDrr(B, E); break;
-    case 0x44: return LDrr(B, H); break;
-    case 0x45: return LDrr(B, L); break;
-    case 0x46: return LDrnn(B, HL); break;
-    case 0x47: return LDrr(B, A); break;
-    case 0x48: return LDrr(C, B); break;
-    case 0x49: return LDrr(C, C); break;
-    case 0x4A: return LDrr(C, D); break;
-    case 0x4B: return LDrr(C, E); break;
-    case 0x4C: return LDrr(C, H); break;
-    case 0x4D: return LDrr(C, L); break;
-    case 0x4E: return LDrnn(C, HL); break;
-    case 0x4F: return LDrr(C, A); break;
-    case 0x50: return LDrr(D, B); break;
-    case 0x51: return LDrr(D, C); break;
-    case 0x52: return LDrr(D, D); break;
-    case 0x53: return LDrr(D, E); break;
-    case 0x54: return LDrr(D, H); break;
-    case 0x55: return LDrr(D, L); break;
-    case 0x56: return LDrnn(D, HL); break;
-    case 0x57: return LDrr(D, A); break;
-    case 0x58: return LDrr(E, B); break;
-    case 0x59: return LDrr(E, C); break;
-    case 0x5A: return LDrr(E, D); break;
-    case 0x5B: return LDrr(E, E); break;
-    case 0x5C: return LDrr(E, H); break;
-    case 0x5D: return LDrr(E, L); break;
-    case 0x5E: return LDrnn(E, HL); break;
-    case 0x5F: return LDrr(E, A); break;
-    case 0x60: return LDrr(H, B); break;
-    case 0x61: return LDrr(H, C); break;
-    case 0x62: return LDrr(H, D); break;
-    case 0x63: return LDrr(H, E); break;
-    case 0x64: return LDrr(H, H); break;
-    case 0x65: return LDrr(H, L); break;
-    case 0x66: return LDrnn(H, HL); break;
-    case 0x67: return LDrr(H, A); break;
-    case 0x68: return LDrr(L, B); break;
-    case 0x69: return LDrr(L, C); break;
-    case 0x6A: return LDrr(L, D); break;
-    case 0x6B: return LDrr(L, E); break;
-    case 0x6C: return LDrr(L, H); break;
-    case 0x6D: return LDrr(L, L); break;
-    case 0x6E: return LDrnn(L, HL); break;
-    case 0x6F: return LDrr(L, A); break;
-    case 0x70: return LDnnr(HL, B); break;
-    case 0x71: return LDnnr(HL, C); break;
-    case 0x72: return LDnnr(HL, D); break;
-    case 0x73: return LDnnr(HL, E); break;
-    case 0x74: return LDnnr(HL, H); break;
-    case 0x75: return LDnnr(HL, L); break;
+    case 0x40: return LDrr(B, B);
+    case 0x41: return LDrr(B, C);
+    case 0x42: return LDrr(B, D);
+    case 0x43: return LDrr(B, E);
+    case 0x44: return LDrr(B, H);
+    case 0x45: return LDrr(B, L);
+    case 0x46: return LDrnn(B, HL);
+    case 0x47: return LDrr(B, A);
+    case 0x48: return LDrr(C, B);
+    case 0x49: return LDrr(C, C);
+    case 0x4A: return LDrr(C, D);
+    case 0x4B: return LDrr(C, E);
+    case 0x4C: return LDrr(C, H);
+    case 0x4D: return LDrr(C, L);
+    case 0x4E: return LDrnn(C, HL);
+    case 0x4F: return LDrr(C, A);
+    case 0x50: return LDrr(D, B);
+    case 0x51: return LDrr(D, C);
+    case 0x52: return LDrr(D, D);
+    case 0x53: return LDrr(D, E);
+    case 0x54: return LDrr(D, H);
+    case 0x55: return LDrr(D, L);
+    case 0x56: return LDrnn(D, HL);
+    case 0x57: return LDrr(D, A);
+    case 0x58: return LDrr(E, B);
+    case 0x59: return LDrr(E, C);
+    case 0x5A: return LDrr(E, D);
+    case 0x5B: return LDrr(E, E);
+    case 0x5C: return LDrr(E, H);
+    case 0x5D: return LDrr(E, L);
+    case 0x5E: return LDrnn(E, HL);
+    case 0x5F: return LDrr(E, A);
+    case 0x60: return LDrr(H, B);
+    case 0x61: return LDrr(H, C);
+    case 0x62: return LDrr(H, D);
+    case 0x63: return LDrr(H, E);
+    case 0x64: return LDrr(H, H);
+    case 0x65: return LDrr(H, L);
+    case 0x66: return LDrnn(H, HL);
+    case 0x67: return LDrr(H, A);
+    case 0x68: return LDrr(L, B);
+    case 0x69: return LDrr(L, C);
+    case 0x6A: return LDrr(L, D);
+    case 0x6B: return LDrr(L, E);
+    case 0x6C: return LDrr(L, H);
+    case 0x6D: return LDrr(L, L);
+    case 0x6E: return LDrnn(L, HL);
+    case 0x6F: return LDrr(L, A);
+    case 0x70: return LDnnr(HL, B);
+    case 0x71: return LDnnr(HL, C);
+    case 0x72: return LDnnr(HL, D);
+    case 0x73: return LDnnr(HL, E);
+    case 0x74: return LDnnr(HL, H);
+    case 0x75: return LDnnr(HL, L);
 
-    case 0x77: return LDnnr(HL, A); break;
-    case 0x78: return LDrr(A, B); break;
-    case 0x79: return LDrr(A, C); break;
-    case 0x7A: return LDrr(A, D); break;
-    case 0x7B: return LDrr(A, E); break;
-    case 0x7C: return LDrr(A, H); break;
-    case 0x7D: return LDrr(A, L); break;
-    case 0x7E: return LDrnn(A, HL); break;
-    case 0x7F: return LDrr(A, A); break;
-    case 0x80: return ADDrr(A, B); break;
-    case 0x81: return ADDrr(A, C); break;
-    case 0x82: return ADDrr(A, D); break;
-    case 0x83: return ADDrr(A, E); break;
-    case 0x84: return ADDrr(A, H); break;
-    case 0x85: return ADDrr(A, L); break;
-    case 0x86: return ADDrnn(A, HL); break;
-    case 0x87: return ADDrr(A, A); break;
-
-
+    case 0x77: return LDnnr(HL, A);
+    case 0x78: return LDrr(A, B);
+    case 0x79: return LDrr(A, C);
+    case 0x7A: return LDrr(A, D);
+    case 0x7B: return LDrr(A, E);
+    case 0x7C: return LDrr(A, H);
+    case 0x7D: return LDrr(A, L);
+    case 0x7E: return LDrnn(A, HL);
+    case 0x7F: return LDrr(A, A);
+    case 0x80: return ADDrr(A, B);
+    case 0x81: return ADDrr(A, C);
+    case 0x82: return ADDrr(A, D);
+    case 0x83: return ADDrr(A, E);
+    case 0x84: return ADDrr(A, H);
+    case 0x85: return ADDrr(A, L);
+    case 0x86: return ADDrnn(A, HL);
+    case 0x87: return ADDrr(A, A);
 
 
 
-    case 0x90: return SUBrr(A, B); break;
-    case 0x91: return SUBrr(A, C); break;
-    case 0x92: return SUBrr(A, D); break;
-    case 0x93: return SUBrr(A, E); break;
-    case 0x94: return SUBrr(A, H); break;
-    case 0x95: return SUBrr(A, L); break;
-    case 0x96: return SUBrnn(A, HL); break;
-    case 0x97: return SUBrr(A, A); break; 
-
-    case 0xA8: return XORAr(B); break;
-    case 0xA9: return XORAr(C); break;
-    case 0xAA: return XORAr(D); break;
-    case 0xAB: return XORAr(E); break;
-    case 0xAC: return XORAr(H); break;
-    case 0xAD: return XORAr(L); break;
-    /* case 0xAE: return 0;//XORAnn(HL); break; */
-    case 0xAF: return XORAr(A); break;
 
 
-    case 0xB8: return CPrr(A, B); break;
-    case 0xB9: return CPrr(A, C); break;
-    case 0xBA: return CPrr(A, D); break;
-    case 0xBB: return CPrr(A, E); break;
-    case 0xBC: return CPrr(A, H); break;
-    case 0xBD: return CPrr(A, L); break;
-    case 0xBE: return CPrnn(A, HL); break;
-    case 0xBF: return CPrr(A, A); break;
+    case 0x90: return SUBrr(A, B);
+    case 0x91: return SUBrr(A, C);
+    case 0x92: return SUBrr(A, D);
+    case 0x93: return SUBrr(A, E);
+    case 0x94: return SUBrr(A, H);
+    case 0x95: return SUBrr(A, L);
+    case 0x96: return SUBrnn(A, HL);
+    case 0x97: return SUBrr(A, A); 
 
-    case 0xC1: return POPrr(BC); break;
-
-    case 0xC5: return PUSHrr(BC); break;
-    case 0xC6: return ADDru8(A); break;
-
-
-    case 0xC9: return RET(); break;
-
-    case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++)); break;
-
-    case 0xCD: return CALLnn(); break;
+    case 0xA8: return XORAr(B);
+    case 0xA9: return XORAr(C);
+    case 0xAA: return XORAr(D);
+    case 0xAB: return XORAr(E);
+    case 0xAC: return XORAr(H);
+    case 0xAD: return XORAr(L);
+    /* case 0xAE: return 0;//XORAnn(HL); */
+    case 0xAF: return XORAr(A);
 
 
-    case 0xD1: return POPrr(DE); break;
+    case 0xB8: return CPrr(A, B);
+    case 0xB9: return CPrr(A, C);
+    case 0xBA: return CPrr(A, D);
+    case 0xBB: return CPrr(A, E);
+    case 0xBC: return CPrr(A, H);
+    case 0xBD: return CPrr(A, L);
+    case 0xBE: return CPrnn(A, HL);
+    case 0xBF: return CPrr(A, A);
 
-    case 0xD5: return PUSHrr(DE); break;
-    case 0xD6: return SUBru8(A); break;
+    case 0xC1: return POPrr(BC);
 
-    case 0xE0: return LDFFu8r(A); break;
-    case 0xE1: return POPrr(HL); break;
-    case 0xE2: return LDnnr(0xFF00 + C, A); break;
+    case 0xC5: return PUSHrr(BC);
+    case 0xC6: return ADDru8(A);
 
-    case 0xE5: return PUSHrr(HL); break;
+
+    case 0xC9: return RET();
+
+    case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
+
+    case 0xCD: return CALLnn();
+
+
+    case 0xD1: return POPrr(DE);
+
+    case 0xD5: return PUSHrr(DE);
+    case 0xD6: return SUBru8(A);
+
+    case 0xE0: return LDFFu8r(A);
+    case 0xE1: return POPrr(HL);
+    case 0xE2: return LDnnr(0xFF00 + C, A);
+
+    case 0xE5: return PUSHrr(HL);
 
     // case 0xE8: ADD SP, i8 ???
 
-    case 0xEA: return LDu16r(A); break;
+    case 0xEA: return LDu16r(A);
 
     case 0xF0: return LDrFFu8(A);
-    case 0xF1: return POPrr(AF); break;
-    case 0xF2: return LDrnn(A, 0xFF00 + C); break;
+    case 0xF1: return POPrr(AF);
+    case 0xF2: return LDrnn(A, 0xFF00 + C);
 
-    case 0xF5: return PUSHrr(AF); break;
+    case 0xF5: return PUSHrr(AF);
 
     // case 0xF8????
 
-    case 0xF9: return LDrrrr(SP, HL); break;
-    case 0xFA: return LDru16(A); break;
-    case 0xFB: return EI(); break;
+    case 0xF9: return LDrrrr(SP, HL);
+    case 0xFA: return LDru16(A);
+    case 0xFB: return EI();
 
-    case 0xFE: return CPru8(A); break;
+    case 0xFE: return CPru8(A);
 
     default:     
-        if (!verbose){
-            std::cout << "Error: encountered unimplemented opcode\n\t...";
-            printRecentOpcodes();   
-        }
+        std::cout << "Error: encountered unimplemented opcode\n\t...";
+        printRecentOpcodes();   
         std::cout << "unimplemented!\n";
-        return 0;// throw; // Exceptions TBC
-    break;
+        throw std::runtime_error("Bad opcode");
     }    
 }
 
 uint16_t CPU::executeCBOpcode(uint8_t opcode){
     addOpcodeToLog(opcode);
-    if (verbose){
-        std::cout << "\n";
-        printOpcode(opcode);
-        std::cout << ": ";
-        printOpcodeCBInfo(opcode);
-    }
     switch(opcode){
         // RLC/RRC
-    case 0x00: return RLCr(B); break;
-    case 0x01: return RLCr(C); break;
-    case 0x02: return RLCr(D); break;
-    case 0x03: return RLCr(B); break;
-    case 0x04: return RLCr(H); break;
-    case 0x05: return RLCr(L); break;
-    // case 0x06: return RLCr((HL)); break;
-    case 0x07: return RLCr(A); break;
-    case 0x08: return RRCr(B); break;
-    case 0x09: return RRCr(C); break;
-    case 0x0A: return RRCr(D); break;
-    case 0x0B: return RRCr(B); break;
-    case 0x0C: return RRCr(H); break;
-    case 0x0D: return RRCr(L); break;
-    // case 0x0E: return RRCr((HL)); break;
-    case 0x0F: return RRCr(A); break;
+    case 0x00: return RLCr(B);
+    case 0x01: return RLCr(C);
+    case 0x02: return RLCr(D);
+    case 0x03: return RLCr(B);
+    case 0x04: return RLCr(H);
+    case 0x05: return RLCr(L);
+    // case 0x06: return RLCr((HL));
+    case 0x07: return RLCr(A);
+    case 0x08: return RRCr(B);
+    case 0x09: return RRCr(C);
+    case 0x0A: return RRCr(D);
+    case 0x0B: return RRCr(B);
+    case 0x0C: return RRCr(H);
+    case 0x0D: return RRCr(L);
+    // case 0x0E: return RRCr((HL));
+    case 0x0F: return RRCr(A);
     // RL/RR
-    case 0x10: return RLr(B); break;
-    case 0x11: return RLr(C); break;
-    case 0x12: return RLr(D); break;
-    case 0x13: return RLr(B); break;
-    case 0x14: return RLr(H); break;
-    case 0x15: return RLr(L); break;
-    // case 0x16: return RLr((HL)); break;
-    case 0x17: return RLr(A); break;
-    case 0x18: return RRr(B); break;
-    case 0x19: return RRr(C); break;
-    case 0x1A: return RRr(D); break;
-    case 0x1B: return RRr(B); break;
-    case 0x1C: return RRr(H); break;
-    case 0x1D: return RRr(L); break;
-    // case 0x1E: return RRr((HL)); break;
-    case 0x1F: return RRr(A); break;
-    case 0x40: return BITbr(0, B); break;
-    case 0x41: return BITbr(0, C); break;
-    case 0x42: return BITbr(0, D); break;
-    case 0x43: return BITbr(0, E); break;
-    case 0x44: return BITbr(0, H); break;
-    case 0x45: return BITbr(0, L); break;
+    case 0x10: return RLr(B);
+    case 0x11: return RLr(C);
+    case 0x12: return RLr(D);
+    case 0x13: return RLr(B);
+    case 0x14: return RLr(H);
+    case 0x15: return RLr(L);
+    // case 0x16: return RLr((HL));
+    case 0x17: return RLr(A);
+    case 0x18: return RRr(B);
+    case 0x19: return RRr(C);
+    case 0x1A: return RRr(D);
+    case 0x1B: return RRr(B);
+    case 0x1C: return RRr(H);
+    case 0x1D: return RRr(L);
+    // case 0x1E: return RRr((HL));
+    case 0x1F: return RRr(A);
+    case 0x40: return BITbr(0, B);
+    case 0x41: return BITbr(0, C);
+    case 0x42: return BITbr(0, D);
+    case 0x43: return BITbr(0, E);
+    case 0x44: return BITbr(0, H);
+    case 0x45: return BITbr(0, L);
     // 0x46
-    case 0x47: return BITbr(0, A); break;
-    case 0x48: return BITbr(1, B); break;
-    case 0x49: return BITbr(1, C); break;
-    case 0x4A: return BITbr(1, D); break;
-    case 0x4B: return BITbr(1, E); break;
-    case 0x4C: return BITbr(1, H); break;
-    case 0x4D: return BITbr(1, L); break;
+    case 0x47: return BITbr(0, A);
+    case 0x48: return BITbr(1, B);
+    case 0x49: return BITbr(1, C);
+    case 0x4A: return BITbr(1, D);
+    case 0x4B: return BITbr(1, E);
+    case 0x4C: return BITbr(1, H);
+    case 0x4D: return BITbr(1, L);
     // 0x4E
-    case 0x4F: return BITbr(1, A); break;
-    case 0x50: return BITbr(2, B); break;
-    case 0x51: return BITbr(2, C); break;
-    case 0x52: return BITbr(2, D); break;
-    case 0x53: return BITbr(2, E); break;
-    case 0x54: return BITbr(2, H); break;
-    case 0x55: return BITbr(2, L); break;
+    case 0x4F: return BITbr(1, A);
+    case 0x50: return BITbr(2, B);
+    case 0x51: return BITbr(2, C);
+    case 0x52: return BITbr(2, D);
+    case 0x53: return BITbr(2, E);
+    case 0x54: return BITbr(2, H);
+    case 0x55: return BITbr(2, L);
     // 0x56
-    case 0x57: return BITbr(2, A); break;
-    case 0x58: return BITbr(3, B); break;
-    case 0x59: return BITbr(3, C); break;
-    case 0x5A: return BITbr(3, D); break;
-    case 0x5B: return BITbr(3, E); break;
-    case 0x5C: return BITbr(3, H); break;
-    case 0x5D: return BITbr(3, L); break;
+    case 0x57: return BITbr(2, A);
+    case 0x58: return BITbr(3, B);
+    case 0x59: return BITbr(3, C);
+    case 0x5A: return BITbr(3, D);
+    case 0x5B: return BITbr(3, E);
+    case 0x5C: return BITbr(3, H);
+    case 0x5D: return BITbr(3, L);
     // 0x5E
-    case 0x5F: return BITbr(3, A); break;
-    case 0x60: return BITbr(4, B); break;
-    case 0x61: return BITbr(4, C); break;
-    case 0x62: return BITbr(4, D); break;
-    case 0x63: return BITbr(4, E); break;
-    case 0x64: return BITbr(4, H); break;
-    case 0x65: return BITbr(4, L); break;
+    case 0x5F: return BITbr(3, A);
+    case 0x60: return BITbr(4, B);
+    case 0x61: return BITbr(4, C);
+    case 0x62: return BITbr(4, D);
+    case 0x63: return BITbr(4, E);
+    case 0x64: return BITbr(4, H);
+    case 0x65: return BITbr(4, L);
     // 0x66
-    case 0x67: return BITbr(4, A); break;
-    case 0x68: return BITbr(5, B); break;
-    case 0x69: return BITbr(5, C); break;
-    case 0x6A: return BITbr(5, D); break;
-    case 0x6B: return BITbr(5, E); break;
-    case 0x6C: return BITbr(5, H); break;
-    case 0x6D: return BITbr(5, L); break;
+    case 0x67: return BITbr(4, A);
+    case 0x68: return BITbr(5, B);
+    case 0x69: return BITbr(5, C);
+    case 0x6A: return BITbr(5, D);
+    case 0x6B: return BITbr(5, E);
+    case 0x6C: return BITbr(5, H);
+    case 0x6D: return BITbr(5, L);
     // 0x6E
-    case 0x6F: return BITbr(5, A); break;
-    case 0x70: return BITbr(6, B); break;
-    case 0x71: return BITbr(6, C); break;
-    case 0x72: return BITbr(6, D); break;
-    case 0x73: return BITbr(6, E); break;
-    case 0x74: return BITbr(6, H); break;
-    case 0x75: return BITbr(6, L); break;
+    case 0x6F: return BITbr(5, A);
+    case 0x70: return BITbr(6, B);
+    case 0x71: return BITbr(6, C);
+    case 0x72: return BITbr(6, D);
+    case 0x73: return BITbr(6, E);
+    case 0x74: return BITbr(6, H);
+    case 0x75: return BITbr(6, L);
     // 0x76
-    case 0x77: return BITbr(6, A); break;
-    case 0x78: return BITbr(7, B); break;
-    case 0x79: return BITbr(7, C); break;
-    case 0x7A: return BITbr(7, D); break;
-    case 0x7B: return BITbr(7, E); break;
-    case 0x7C: return BITbr(7, H); break;
-    case 0x7D: return BITbr(7, L); break;
+    case 0x77: return BITbr(6, A);
+    case 0x78: return BITbr(7, B);
+    case 0x79: return BITbr(7, C);
+    case 0x7A: return BITbr(7, D);
+    case 0x7B: return BITbr(7, E);
+    case 0x7C: return BITbr(7, H);
+    case 0x7D: return BITbr(7, L);
     // 0x7E
-    case 0x7F: return BITbr(7, A); break;
+    case 0x7F: return BITbr(7, A);
     default:
-        if (!verbose){
-            std::cout << "Error: encountered unimplemented CB opcode\n\t...";
-            printRecentOpcodes();
-        }
+        std::cout << "Error: encountered unimplemented CB opcode\n\t...";
+        printRecentOpcodes();
         std::cout << "unimplemented!\n";
-        return 0;// throw; // Exceptions TBC
-        break;
+        throw std::runtime_error("Bad CB opcode");
     }  
-
 }
 
 // NOP (0x00)
@@ -1246,6 +1202,7 @@ void CPU::addOpcodeToLog(uint8_t opcode){
 
 void CPU::printRecentOpcodes(){
     bool lastOpcodeIsCBPrefix = false;
+    std::cout << "\t...";
     for (auto op : recentOpcodes){
         std::cout << "\n\t";
         printOpcode(op);
