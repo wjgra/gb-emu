@@ -25,6 +25,8 @@ struct HalfRegister final{
     HalfRegister& operator++();
     HalfRegister operator++(int);
     bool testBit(uint8_t bit) const;
+    void setBit(uint8_t bit);
+    void clearBit(uint8_t bit);
 };
 struct Register final{
     HalfRegister lowerByte;
@@ -42,14 +44,12 @@ struct Register final{
 };
 class CPU final{
 public:
-    CPU(MemoryMap& memMap); // Constructor w/ initial register state?
-    void frame(unsigned int frameTime);
-    void stop();
+    CPU(MemoryMap& memMap);
+    uint16_t executeNextOpcode();
+    void handleInterrupts();
+    void requestInterrupt(uint8_t interrupt);
+    void finish();
 private:
-
-    double const maxClockFreq = 4.194304; // MHz
-    uint32_t cyclesSinceLastUpdate = 0;
-
     MemoryMap& memoryMap;
     Register AF, BC, DE, HL;
     HalfRegister &A = AF.upperByte;
@@ -65,8 +65,7 @@ private:
     Register PC;
 
     uint8_t clockT, clockM; // technically these are each 16bit, but with only upperByte exposed
-
-    uint16_t executeNextOpcode();
+    
     uint16_t executeOpcode(uint8_t opcode);
     uint16_t executeCBOpcode(uint8_t opcode);
 
@@ -122,6 +121,7 @@ private:
     uint16_t BITbnn(uint8_t bit, uint16_t address);
 
     uint16_t EI();
+    uint16_t DI();
 
     // Rotate - old carry flag rotated in, carry flag set to rotated out value 
     uint16_t RLr(HalfRegister& reg);
@@ -142,6 +142,7 @@ private:
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
     uint16_t RET();
+    uint16_t RETI();
 
     void setFlag(uint8_t flag);
     void setFlag(uint8_t flag, bool value);

@@ -11,9 +11,10 @@ class GBEmulator final{
 public:
     GBEmulator();
     bool start();
-    void mainLoop();
-    void handleEvents(SDL_Event const&  event);
 private:
+    void finish();
+    void frame();
+    void handleEvents(SDL_Event const&  event);
     MemoryMap memoryMap;
     CPU cpu;
     GPU gpu;
@@ -23,6 +24,8 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> tStart, tNow;
     unsigned int maxFrameDuration = 250000;
     bool quit = false;
+    double const maxClockFreq = 4.194304; // MHz
+    unsigned int cyclesSinceLastUpdate = 0;
 };
 
 #endif

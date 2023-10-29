@@ -37,6 +37,10 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
     else if(address >= 0xFEA0 && address <= 0xFEFF){
         throw std::runtime_error("Access violation! Cannot write to [0xFEA0, 0xFEFF]");
     }
+    else if (address == 0xFF04){
+        // Attempting to write to divider register clears it
+        memory[address] = 0;
+    }
     else{
         memory[address] = value;
     }

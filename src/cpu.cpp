@@ -70,6 +70,16 @@ bool HalfRegister::testBit(uint8_t bit) const{
     return ((0b1 << bit) & byte);
 }
 
+// Set nth bit in register
+void HalfRegister::setBit(uint8_t bit){
+    byte |= (0b1 << bit);
+}
+
+// Clear nth bit in register
+void HalfRegister::clearBit(uint8_t bit){
+    byte &= ~(0b1 << bit);
+}
+
 Register::Register() : lowerByte{}, upperByte{}{
 }
 
@@ -306,6 +316,9 @@ void CPU::initOpcodeInfo(){
 
     opcodeInfo[0xD5] = "PUSH DE to stack";
 
+
+    opcodeInfo[0xD9] = "RETI";
+
     opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
@@ -324,7 +337,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xF0] = "LD A from (0xFF00+u8)";
     opcodeInfo[0xF1] = "POP stack to AF";
     opcodeInfo[0xF2] = "LD A from (0xFF00+C)";
-
+    opcodeInfo[0xF3] = "Disable interrupts";
     opcodeInfo[0xF5] = "PUSH AF to stack";
 
     // opcodeInfo[0xF8] = "LD ????;
@@ -438,17 +451,9 @@ void CPU::initOpcodeInfo(){
     // 0x80 - 0xFF
 }
 
-void CPU::stop(){
+void CPU::finish(){
     printRecentOpcodes();
     std::cout << "\n\nPC at exit: 0x" << std::hex << PC << "\n";
-}
-
-void CPU::frame(unsigned int frameTime){
-    uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
-    while (cyclesSinceLastUpdate < maxCyclesThisFrame){
-        cyclesSinceLastUpdate += executeNextOpcode();
-    }
-    cyclesSinceLastUpdate -= maxCyclesThisFrame;
 }
 
 uint16_t CPU::executeNextOpcode(){
@@ -653,6 +658,9 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
 
+
+    case 0xD9: return RETI();
+
     case 0xE0: return LDFFu8r(A);
     case 0xE1: return POPrr(HL);
     case 0xE2: return LDnnr(0xFF00 + C, A);
@@ -666,7 +674,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xF0: return LDrFFu8(A);
     case 0xF1: return POPrr(AF);
     case 0xF2: return LDrnn(A, 0xFF00 + C);
-
+    case 0xF3: return DI();
     case 0xF5: return PUSHrr(AF);
 
     // case 0xF8????
@@ -678,9 +686,10 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xFE: return CPru8(A);
 
     default:     
-        std::cout << "Error: encountered unimplemented opcode\n\t...";
+        std::cout << "Error: encountered unimplemented opcode\n";
         printRecentOpcodes();   
         std::cout << "unimplemented!\n";
+        std::cout << "PC at exit: 0x" << std::hex << PC << "\n";
         throw std::runtime_error("Bad opcode");
     }    
 }
@@ -787,9 +796,10 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     // 0x7E
     case 0x7F: return BITbr(7, A);
     default:
-        std::cout << "Error: encountered unimplemented CB opcode\n\t...";
+        std::cout << "Error: encountered unimplemented CB opcode\n";
         printRecentOpcodes();
         std::cout << "unimplemented!\n";
+        std::cout << "PC at exit: 0x" << std::hex << PC << "\n";
         throw std::runtime_error("Bad CB opcode");
     }  
 }
@@ -890,7 +900,7 @@ uint16_t CPU::INCrr(Register& reg){
 }
 
 uint16_t CPU::INCr(HalfRegister& reg){
-    setFlag(FLAG_HALFCARRY, (((reg & 0xF) + 1) & 0x10)/*  == 0x10 */);
+    setFlag(FLAG_HALFCARRY, (((reg & 0xF) + 1) & 0x10));
     ++reg;
     setFlag(FLAG_ZERO, reg == 0);
     clearFlag(FLAG_SUBTRACT);
@@ -911,7 +921,7 @@ uint16_t CPU::DECrr(Register& reg){
 }
 
 uint16_t CPU::DECr(HalfRegister& reg){
-    setFlag(FLAG_HALFCARRY, ((reg & 0xF) - 1) & 0x10); // considered adding (...) == 0x10, but is redundant
+    setFlag(FLAG_HALFCARRY, ((reg & 0xF) - 1) & 0x10);
     --reg;
     setFlag(FLAG_ZERO, reg == 0);
     setFlag(FLAG_SUBTRACT);
@@ -1028,6 +1038,11 @@ uint16_t CPU::EI(){
     return 4;
 }
 
+uint16_t CPU::DI(){
+    interruptsEnabled = false;
+    return 4;
+}
+
 uint16_t CPU::RLr(HalfRegister& reg){
     bool oldCarryState = isFlagSet(FLAG_CARRY);
     bool newCarryState = reg & (0x1 << 7);
@@ -1120,7 +1135,6 @@ uint16_t CPU::RRA(){
     return 4;
 }
 
-
 /* uint16_t CPU::JPnn(uint16_t address){
 
     return 16;
@@ -1147,6 +1161,11 @@ uint16_t CPU::RET(){
     PC = memoryMap.readWord(SP);
     SP += 2;
     return 16;
+}
+
+uint16_t CPU::RETI(){
+    EI();
+    return RET();
 }
 
 uint8_t CPU::readByteAtPC(){
@@ -1178,6 +1197,38 @@ void CPU::clearFlag(uint8_t flag){
 
 bool CPU::isFlagSet(uint8_t flag){
     return flag & F;
+}
+
+void CPU::handleInterrupts(){
+    if(interruptsEnabled){
+        HalfRegister regIntEnabled = memoryMap.readByte(0xFFFF);
+        HalfRegister regIntFlag = memoryMap.readByte(0xFF0F);
+        for (int i = 0 ; i < 5 ; ++i){
+            if (regIntEnabled.testBit(i) && regIntFlag.testBit(i)){
+                interruptsEnabled = false;
+                regIntFlag.clearBit(i);
+                memoryMap.writeByte(0xFF0F, regIntFlag);
+                PUSHrr(PC);
+                uint16_t const interruptRoutines[5] = {0x40, 0x48, 0x50, 0x58, 0x60};
+                PC = interruptRoutines[i];
+            }
+        }
+    }
+}
+
+// Interrupts
+// 0: vBlank
+// 1: LCD
+// 2: Timer
+// 3: Serial
+// 4: Joypad
+void CPU::requestInterrupt(uint8_t interrupt){
+    if (interrupt > 4){
+        throw std::runtime_error("Interrupt out of range");
+    }
+    HalfRegister regIntFlag = memoryMap.readByte(0xFF0F);
+    regIntFlag.setBit(interrupt);
+    memoryMap.writeByte(0xFF0F, regIntFlag);
 }
 
 void CPU::printOpcode(uint8_t opcode){

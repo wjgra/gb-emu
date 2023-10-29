@@ -1,6 +1,6 @@
 #include "..\inc\emulator.h"
 
-GBEmulator::GBEmulator() : cpu{memoryMap}, gpu{memoryMap}{
+GBEmulator::GBEmulator() : cpu{memoryMap}, gpu{memoryMap, cpu}{
 }
 
 bool GBEmulator::start(){
@@ -22,19 +22,34 @@ bool GBEmulator::start(){
     
     tStart = std::chrono::high_resolution_clock::now();
     while (!quit){
-        mainLoop();
+        frame();
     }
     return EXIT_SUCCESS;
 }
 
-void GBEmulator::mainLoop(){
+void GBEmulator::finish(){
+    cpu.finish();
+    quit = true;
+}
+
+void GBEmulator::frame(){
     tNow = std::chrono::high_resolution_clock::now();
     unsigned int frameTime = std::chrono::duration_cast<std::chrono::microseconds>(tNow - tStart).count();
     if (frameTime > maxFrameDuration){
         frameTime = maxFrameDuration;
     }
-    cpu.frame(frameTime);
-    gpu.frame(frameTime);
+
+    uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
+    while (cyclesSinceLastUpdate < maxCyclesThisFrame){
+        uint16_t cycles = cpu.executeNextOpcode();
+        // update timers
+        gpu.update(cycles);
+        cpu.handleInterrupts(); // 5 M-cycles (per interrupt?)
+        cyclesSinceLastUpdate += cycles;
+    }
+    cyclesSinceLastUpdate -= maxCyclesThisFrame;
+
+    gpu.render();
     SDL_Event event;
     while (SDL_PollEvent(&event)){
         handleEvents(event);
@@ -46,8 +61,7 @@ void GBEmulator::handleEvents(SDL_Event const&  event){
     switch(event.type){
         case SDL_KEYDOWN:
             if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-                cpu.stop();
-                quit = true;
+                finish();
             }
             break;
         default:
