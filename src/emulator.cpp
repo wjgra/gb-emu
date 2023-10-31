@@ -5,7 +5,11 @@ GBEmulator::GBEmulator() : cpu{memoryMap}, gpu{memoryMap, cpu}{
 
 bool GBEmulator::start(){
     window = SDL_CreateWindow("GB-EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winWidth, winHeight, winFlags);
-    gpu.setWindowPointer(window);
+    if(!window){
+        throw std::runtime_error("Failed to create SDL window");
+    }
+
+    gpu.initialiseRenderer(window);
 
     if (!memoryMap.loadBootProgram(".//input//dmg_boot.gb")){
         throw std::runtime_error("Failed to load boot program");

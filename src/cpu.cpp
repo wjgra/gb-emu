@@ -300,25 +300,29 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xBF] = "CP A, A";
 
     opcodeInfo[0xC1] = "POP stack to BC";
+    opcodeInfo[0xC2] = "JP NZ, u16";
+    opcodeInfo[0xC3] = "JP u16";
 
     opcodeInfo[0xC5] = "PUSH BC to stack";
     opcodeInfo[0xC6] = "ADD A, u8";
 
 
     opcodeInfo[0xC9] = "RET";
-
+    opcodeInfo[0xC3] = "JP Z, u16";
     opcodeInfo[0xCB] = "CB-prefixed opcode! See next line";
 
     opcodeInfo[0xCD] = "CALL (PC)";
 
     opcodeInfo[0xD0] = "SUB A, (PC)";
     opcodeInfo[0xD1] = "POP stack to DE";
+    opcodeInfo[0xD2] = "JP NC, u16";
+
 
     opcodeInfo[0xD5] = "PUSH DE to stack";
 
 
     opcodeInfo[0xD9] = "RETI";
-
+    opcodeInfo[0xDA] = "JP C, u16";
     opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
@@ -327,7 +331,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xE5] = "PUSH HL to stack";
 
     // opcodeInfo[0xE8] = "ADD SP, i8";
-
+    opcodeInfo[0xE9] = "JP HL";
     opcodeInfo[0xEA] = "LD (u16) from A";
 
 
@@ -641,25 +645,31 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xBF: return CPrr(A, A);
 
     case 0xC1: return POPrr(BC);
+    case 0xC2: return JPccu16(FLAG_ZERO, false);
+    case 0xC3: return JPu16();
 
     case 0xC5: return PUSHrr(BC);
     case 0xC6: return ADDru8(A);
 
 
     case 0xC9: return RET();
-
+    case 0xCA: return JPccu16(FLAG_ZERO, true);
     case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
 
     case 0xCD: return CALLnn();
 
-
     case 0xD1: return POPrr(DE);
+
+    case 0xD3: return JPccu16(FLAG_CARRY, false);
 
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
 
 
     case 0xD9: return RETI();
+    case 0xDA: return JPccu16(FLAG_CARRY, true);
+
+
 
     case 0xE0: return LDFFu8r(A);
     case 0xE1: return POPrr(HL);
@@ -668,7 +678,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xE5: return PUSHrr(HL);
 
     // case 0xE8: ADD SP, i8 ???
-
+    case 0xE9: return JPnn(HL);
     case 0xEA: return LDu16r(A);
 
     case 0xF0: return LDrFFu8(A);
@@ -686,11 +696,10 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xFE: return CPru8(A);
 
     default:     
-        std::cout << "Error: encountered unimplemented opcode\n";
         printRecentOpcodes();   
         std::cout << "unimplemented!\n";
         std::cout << "PC at exit: 0x" << std::hex << PC << "\n";
-        throw std::runtime_error("Bad opcode");
+        throw std::runtime_error("Encountered unimplemented opcode");
     }    
 }
 
@@ -796,11 +805,10 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     // 0x7E
     case 0x7F: return BITbr(7, A);
     default:
-        std::cout << "Error: encountered unimplemented CB opcode\n";
         printRecentOpcodes();
         std::cout << "unimplemented!\n";
         std::cout << "PC at exit: 0x" << std::hex << PC << "\n";
-        throw std::runtime_error("Bad CB opcode");
+        throw std::runtime_error("Encountered unimplemented CB opcode");
     }  
 }
 
@@ -1135,11 +1143,26 @@ uint16_t CPU::RRA(){
     return 4;
 }
 
-/* uint16_t CPU::JPnn(uint16_t address){
-
+uint16_t CPU::JPnn(uint16_t address){
+    PC = address;
+    return 4;
+}
+ 
+uint16_t CPU::JPu16(){
+    PC = readWordAtPC();
     return 16;
 }
- */
+
+uint16_t CPU::JPccu16(uint8_t condition, bool positiveCondition){
+    bool res = condition & F;
+    if ((res && positiveCondition) || (!res && !positiveCondition)){
+        return JPu16();
+    }
+    else{
+        PC += 2; // Address is still read 
+        return 12;
+    }
+}
 
 uint16_t CPU::JRe(){
     PC += static_cast<int8_t>(readByteAtPC());
@@ -1156,6 +1179,7 @@ uint16_t CPU::JRcce(uint8_t condition, bool positiveCondition){
         return 8;
     }
 }
+
 
 uint16_t CPU::RET(){
     PC = memoryMap.readWord(SP);

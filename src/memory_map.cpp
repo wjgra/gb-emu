@@ -15,7 +15,10 @@ uint8_t MemoryMap::readByte(uint16_t address){
         return memory[address - 0x2000];
     }
     else if (address >= 0xFEA0 && address <= 0xFEFF){
-        throw std::runtime_error("Access violation! Cannot read from [0xFEA0, 0xFEFF]");
+        // throw std::runtime_error("Access violation! Cannot read from [0xFEA0, 0xFEFF]");
+        // Apparently this is meant to be a no-op (and similar for writeByte below)
+        // Some games (including Tetris) use illegal reads/writes as a way to skip cycles!
+        return 0x00;
     }
     else{
         return memory[address];
@@ -28,14 +31,14 @@ uint16_t MemoryMap::readWord(uint16_t address){
 
 void MemoryMap::writeByte(uint16_t address, uint8_t value){
     if (address < 0x8000){
-        throw std::runtime_error("Access violation! Cannot write to [0x0000, 0x7FFF]");
+        // throw std::runtime_error("Access violation! Cannot write to [0x0000, 0x7FFF]");
     }
     else if (address >= 0xE000 && address < 0xFE00){
         // Echo RAM
         memory[address - 0x2000] = value;
     }
     else if(address >= 0xFEA0 && address <= 0xFEFF){
-        throw std::runtime_error("Access violation! Cannot write to [0xFEA0, 0xFEFF]");
+        // throw std::runtime_error("Access violation! Cannot write to [0xFEA0, 0xFEFF]");
     }
     else if (address == 0xFF04){
         // Attempting to write to divider register clears it

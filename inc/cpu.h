@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <deque>
+#include <algorithm>
 
 #include <SDL.h>
 
@@ -69,11 +70,11 @@ private:
     uint16_t executeOpcode(uint8_t opcode);
     uint16_t executeCBOpcode(uint8_t opcode);
 
-    // Instruction set - return type is #(cycles to execute opcode)
-    uint16_t NOP(); // NOP (0x00)
-
     uint16_t readWordAtPC();
     uint8_t readByteAtPC();
+
+    // Instruction set - return type is #(cycles to execute opcode)
+    uint16_t NOP(); // NOP (0x00)
 
     uint16_t LDrru16(Register& targetReg);
     uint16_t LDnnr(uint16_t targetAddress, HalfRegister dataReg);
@@ -137,13 +138,17 @@ private:
     uint16_t RRCA();
     uint16_t RRA();
 
-    // uint16_t JPnn(uint16_t address);
+    uint16_t JPnn(uint16_t address);
+    uint16_t JPu16();
+    uint16_t JPccu16(uint8_t condition, bool positiveCondition);
     uint16_t JRe();
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
     uint16_t RET();
     uint16_t RETI();
 
+    // Utility functions
+    
     void setFlag(uint8_t flag);
     void setFlag(uint8_t flag, bool value);
     void clearFlag(uint8_t flag);
