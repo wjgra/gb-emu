@@ -274,6 +274,11 @@ void CPU::initOpcodeInfo(){
 
 
 
+
+
+
+
+
     opcodeInfo[0x90] = "SUB A, B";
     opcodeInfo[0x91] = "SUB A, C";
     opcodeInfo[0x92] = "SUB A, D";
@@ -282,14 +287,38 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x95] = "SUB A, L";
     opcodeInfo[0x96] = "SUB A, (HL)";
     opcodeInfo[0x97] = "SUB A, A";
+
+
+
+
+
+
+
+
+    opcodeInfo[0xA0] = "AND A, B";
+    opcodeInfo[0xA1] = "AND A, C";
+    opcodeInfo[0xA2] = "AND A, D";
+    opcodeInfo[0xA3] = "AND A, E";
+    opcodeInfo[0xA4] = "AND A, H";
+    opcodeInfo[0xA5] = "AND A, L";
+    opcodeInfo[0xA6] = "AND A, (HL)";
+    opcodeInfo[0xA7] = "AND A, A";
     opcodeInfo[0xA8] = "XOR A with B";
     opcodeInfo[0xA9] = "XOR A with C";
     opcodeInfo[0xAA] = "XOR A with D";
     opcodeInfo[0xAB] = "XOR A with E";
     opcodeInfo[0xAC] = "XOR A with H";
     opcodeInfo[0xAD] = "XOR A with L";
-    // opcodeInfo[0xAE] = "XOR A with (HL)";
+    opcodeInfo[0xAE] = "XOR A with (HL)";
     opcodeInfo[0xAF] = "XOR A with A";
+    opcodeInfo[0xB0] = "OR A, B";
+    opcodeInfo[0xB1] = "OR A, C";
+    opcodeInfo[0xB2] = "OR A, D";
+    opcodeInfo[0xB3] = "OR A, E";
+    opcodeInfo[0xB4] = "OR A, H";
+    opcodeInfo[0xB5] = "OR A, L";
+    opcodeInfo[0xB6] = "OR A, (HL)";
+    opcodeInfo[0xB7] = "OR A, A";
     opcodeInfo[0xB8] = "CP A, B";
     opcodeInfo[0xB9] = "CP A, C";
     opcodeInfo[0xBA] = "CP A, D";
@@ -298,7 +327,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xBD] = "CP A, L";
     opcodeInfo[0xBE] = "CP A, (HL)";
     opcodeInfo[0xBF] = "CP A, A";
-
+    opcodeInfo[0xC0] = "RET NZ";
     opcodeInfo[0xC1] = "POP stack to BC";
     opcodeInfo[0xC2] = "JP NZ, u16";
     opcodeInfo[0xC3] = "JP u16";
@@ -306,50 +335,61 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xC5] = "PUSH BC to stack";
     opcodeInfo[0xC6] = "ADD A, u8";
 
-
+    opcodeInfo[0xC8] = "RET Z";
     opcodeInfo[0xC9] = "RET";
     opcodeInfo[0xC3] = "JP Z, u16";
     opcodeInfo[0xCB] = "CB-prefixed opcode! See next line";
 
     opcodeInfo[0xCD] = "CALL (PC)";
 
-    opcodeInfo[0xD0] = "SUB A, (PC)";
+
+    opcodeInfo[0xD0] = "RET NC";
     opcodeInfo[0xD1] = "POP stack to DE";
     opcodeInfo[0xD2] = "JP NC, u16";
-
+    // No 0xD3 opcode
 
     opcodeInfo[0xD5] = "PUSH DE to stack";
+    opcodeInfo[0xD6] = "SUB A, (PC)";
 
-
+    opcodeInfo[0xD8] = "RET C";
     opcodeInfo[0xD9] = "RETI";
     opcodeInfo[0xDA] = "JP C, u16";
+    // No 0xDB opcode
+
+    // No 0xDD opcode
+
+
     opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
-
-
+    // No 0xE3 opcode
+    // No 0xE4 opcode
     opcodeInfo[0xE5] = "PUSH HL to stack";
+    opcodeInfo[0xE6] = "AND A, u8";
 
     // opcodeInfo[0xE8] = "ADD SP, i8";
     opcodeInfo[0xE9] = "JP HL";
     opcodeInfo[0xEA] = "LD (u16) from A";
-
-
-
-
+    // No 0xEB opcode
+    // No 0xEC opcode
+    // No 0xED opcode
+    opcodeInfo[0xEE] = "XOR A with u8";
 
     opcodeInfo[0xF0] = "LD A from (0xFF00+u8)";
     opcodeInfo[0xF1] = "POP stack to AF";
     opcodeInfo[0xF2] = "LD A from (0xFF00+C)";
     opcodeInfo[0xF3] = "Disable interrupts";
+    // No 0xF4 opcode
     opcodeInfo[0xF5] = "PUSH AF to stack";
+    opcodeInfo[0xF5] = "OR A, u8";
+
 
     // opcodeInfo[0xF8] = "LD ????;
     opcodeInfo[0xF9] = "LD SP from HL";
     opcodeInfo[0xFA] = "LD A from (u16)";
     opcodeInfo[0xFB] = "Enable interrupts";
-
-
+    // No 0xFC opcode
+    // No 0xFD opcode
     opcodeInfo[0xFE] = "CP A, u8";
 
     opcodeCBInfo = std::vector<std::string>(0x100, "");
@@ -625,16 +665,31 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x96: return SUBrnn(A, HL);
     case 0x97: return SUBrr(A, A); 
 
+
+    case 0xA0: return ANDAr(B);
+    case 0xA1: return ANDAr(C);
+    case 0xA2: return ANDAr(D);
+    case 0xA3: return ANDAr(E);
+    case 0xA4: return ANDAr(H);
+    case 0xA5: return ANDAr(L);
+    case 0xA6: return ANDAnn(HL);
+    case 0xA7: return ANDAr(A); 
     case 0xA8: return XORAr(B);
     case 0xA9: return XORAr(C);
     case 0xAA: return XORAr(D);
     case 0xAB: return XORAr(E);
     case 0xAC: return XORAr(H);
     case 0xAD: return XORAr(L);
-    /* case 0xAE: return 0;//XORAnn(HL); */
+    case 0xAE: return XORAnn(HL);
     case 0xAF: return XORAr(A);
-
-
+    case 0xB0: return ORAr(B);
+    case 0xB1: return ORAr(C);
+    case 0xB2: return ORAr(D);
+    case 0xB3: return ORAr(E);
+    case 0xB4: return ORAr(H);
+    case 0xB5: return ORAr(L);
+    case 0xB6: return ORAnn(HL);
+    case 0xB7: return ORAr(A);
     case 0xB8: return CPrr(A, B);
     case 0xB9: return CPrr(A, C);
     case 0xBA: return CPrr(A, D);
@@ -643,7 +698,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xBD: return CPrr(A, L);
     case 0xBE: return CPrnn(A, HL);
     case 0xBF: return CPrr(A, A);
-
+    case 0xC0: return RETcc(FLAG_ZERO, false);
     case 0xC1: return POPrr(BC);
     case 0xC2: return JPccu16(FLAG_ZERO, false);
     case 0xC3: return JPu16();
@@ -651,13 +706,13 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xC5: return PUSHrr(BC);
     case 0xC6: return ADDru8(A);
 
-
+    case 0xC8: return RETcc(FLAG_ZERO, true);
     case 0xC9: return RET();
     case 0xCA: return JPccu16(FLAG_ZERO, true);
     case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
 
     case 0xCD: return CALLnn();
-
+    case 0xD0: return RETcc(FLAG_CARRY, false);
     case 0xD1: return POPrr(DE);
 
     case 0xD3: return JPccu16(FLAG_CARRY, false);
@@ -665,7 +720,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
 
-
+    case 0xD8: return RETcc(FLAG_CARRY, true);
     case 0xD9: return RETI();
     case 0xDA: return JPccu16(FLAG_CARRY, true);
 
@@ -676,17 +731,20 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xE2: return LDnnr(0xFF00 + C, A);
 
     case 0xE5: return PUSHrr(HL);
-
+    case 0xE6: return ANDAu8();
     // case 0xE8: ADD SP, i8 ???
     case 0xE9: return JPnn(HL);
     case 0xEA: return LDu16r(A);
+
+
+    case 0xEE: return XORAu8();
 
     case 0xF0: return LDrFFu8(A);
     case 0xF1: return POPrr(AF);
     case 0xF2: return LDrnn(A, 0xFF00 + C);
     case 0xF3: return DI();
     case 0xF5: return PUSHrr(AF);
-
+    case 0xF6: return ORAu8();
     // case 0xF8????
 
     case 0xF9: return LDrrrr(SP, HL);
@@ -902,6 +960,82 @@ uint16_t CPU::XORAr(HalfRegister reg){
     return 4;
 }
 
+uint16_t CPU::XORAnn(uint16_t dataAddress){
+    A ^= memoryMap.readByte(dataAddress);
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
+
+uint16_t CPU::XORAu8(){
+    A ^= readByteAtPC();
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
+
+// ORAr
+// ORs A with given half register and stores result in A
+uint16_t CPU::ORAr(HalfRegister reg){
+    A |= reg;
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 4;
+}
+
+uint16_t CPU::ORAnn(uint16_t dataAddress){
+    A |= memoryMap.readByte(dataAddress);
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
+
+uint16_t CPU::ORAu8(){
+    A |= readByteAtPC();
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
+
+
+// ANDAr
+// ANDs A with given half register and stores result in A
+uint16_t CPU::ANDAr(HalfRegister reg){
+    A |= reg;
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 4;
+}
+
+uint16_t CPU::ANDAnn(uint16_t dataAddress){
+    A |= memoryMap.readByte(dataAddress);
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
+
+uint16_t CPU::ANDAu8(){
+    A |= readByteAtPC();
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
+    setFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_CARRY);
+    return 8;
+}
 uint16_t CPU::INCrr(Register& reg){
     ++reg;
     return 8;
@@ -1155,7 +1289,7 @@ uint16_t CPU::JPu16(){
 
 uint16_t CPU::JPccu16(uint8_t condition, bool positiveCondition){
     bool res = condition & F;
-    if ((res && positiveCondition) || (!res && !positiveCondition)){
+    if (res == positiveCondition){
         return JPu16();
     }
     else{
@@ -1171,7 +1305,7 @@ uint16_t CPU::JRe(){
 
 uint16_t CPU::JRcce(uint8_t condition, bool positiveCondition){
     bool res = condition & F;
-    if ((res && positiveCondition) || (!res && !positiveCondition)){
+    if (res == positiveCondition){
         return JRe();
     }
     else{
@@ -1185,6 +1319,17 @@ uint16_t CPU::RET(){
     PC = memoryMap.readWord(SP);
     SP += 2;
     return 16;
+}
+
+uint16_t CPU::RETcc(uint8_t condition, bool positiveCondition){
+    bool res = condition & F;
+    if (res == positiveCondition){
+        RET();
+        return 20;
+    }
+    else{
+        return 8;
+    }  
 }
 
 uint16_t CPU::RETI(){

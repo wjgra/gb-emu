@@ -93,6 +93,15 @@ private:
     uint16_t CALLnn();
 
     uint16_t XORAr(HalfRegister reg);
+    uint16_t XORAnn(uint16_t dataAddress);
+    uint16_t XORAu8();
+    uint16_t ORAr(HalfRegister reg);
+    uint16_t ORAnn(uint16_t dataAddress);
+    uint16_t ORAu8();
+
+    uint16_t ANDAr(HalfRegister reg);
+    uint16_t ANDAnn(uint16_t dataAddress);
+    uint16_t ANDAu8();
 
     uint16_t INCrr(Register& reg);
     uint16_t INCr(HalfRegister& reg);
@@ -145,6 +154,7 @@ private:
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
     uint16_t RET();
+    uint16_t RETcc(uint8_t condition, bool positiveCondition);
     uint16_t RETI();
 
     // Utility functions

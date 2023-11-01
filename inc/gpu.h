@@ -24,18 +24,25 @@ private:
     bool bgWindowTileDataArea() const;
     bool bgTileMapArea() const;
     bool objSize() const;
-    bool objEnable() const;
-    bool bgWindowEnable() const;
+    bool objEnabled() const;
+    bool bgWindowEnabled() const;
 
 
     // ----
     uint8_t getMode() const;
     void setMode(uint8_t mode);
     void drawScanline();
+    void drawBgScanline();
+    void drawWindowScanline();
+    void drawObjScanline();
+
     void pushFrame();
 
     void resetCurrentLine();
-    uint8_t getNextLine();
+    uint8_t getCurrentLine();
+    uint8_t incrementCurrentLine();
+
+    // getters for scroll x,y ; win x, y
 
     uint16_t const cyclesPerLine = 456;
     uint16_t const scanlinesPerFrame = 154;
@@ -50,7 +57,16 @@ private:
 
     SDL_Renderer* renderer;
     SDL_Texture* texture;
-    std::vector<uint32_t> LCDtexture, framebuffer; // Issue: consider renaming
+    std::vector<uint32_t> LCDtexture, bgBuffer, framebuffer; // Issue: consider renaming
+
+    uint32_t const GB_COLOUR_BLACK = 0x00000000,
+                   GB_COLOUR_DARK  = 0x606060FF,
+                   GB_COLOUR_LIGHT = 0xC0C0C0FF,
+                   GB_COLOUR_WHITE = 0xFFFFFFFF;
+    std::array<uint32_t, 4> const colours = {GB_COLOUR_WHITE, 
+                                             GB_COLOUR_LIGHT, 
+                                             GB_COLOUR_DARK, 
+                                             GB_COLOUR_BLACK};
 };
 
 #endif
