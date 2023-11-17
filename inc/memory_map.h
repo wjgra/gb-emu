@@ -11,8 +11,8 @@
 class MemoryMap final{
 public:
     MemoryMap();
-    uint8_t readByte(uint16_t address);
-    uint16_t readWord(uint16_t address);
+    uint8_t readByte(uint16_t address) const;
+    uint16_t readWord(uint16_t address) const;
     void writeByte(uint16_t address, uint8_t value);
     void writeWord(uint16_t address, uint16_t value);
     bool loadBootProgram(std::string path);
@@ -21,6 +21,7 @@ public:
 private:
     void writeByte(uint16_t address, uint8_t value, std::vector<uint8_t>& target);
     bool loadBinary(std::string path, std::vector<uint8_t>& target);
+    void transferDMA(uint8_t value);
     std::vector<uint8_t> memory;
     std::vector<uint8_t> bootMemory;
     bool isBooting = false;

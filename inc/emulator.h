@@ -20,7 +20,7 @@ private:
     GPU gpu;
     SDL_Window* window;
     uint32_t winFlags = SDL_WINDOW_SHOWN;
-    unsigned int const winWidth = 160, winHeight = 144;
+    unsigned int const winWidth = 160, winHeight = 144, winScale = 3;
     std::chrono::time_point<std::chrono::high_resolution_clock> tStart, tNow;
     unsigned int maxFrameDuration = 250000;
     bool quit = false;

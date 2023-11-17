@@ -27,6 +27,7 @@ struct HalfRegister final{
     HalfRegister operator++(int);
     bool testBit(uint8_t bit) const;
     void setBit(uint8_t bit);
+    void setBit(uint8_t bit, bool value);
     void clearBit(uint8_t bit);
 };
 struct Register final{
@@ -50,6 +51,7 @@ public:
     void handleInterrupts();
     void requestInterrupt(uint8_t interrupt);
     void finish();
+    void toggleHalt();
 private:
     MemoryMap& memoryMap;
     Register AF, BC, DE, HL;

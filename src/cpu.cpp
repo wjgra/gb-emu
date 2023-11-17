@@ -75,6 +75,10 @@ void HalfRegister::setBit(uint8_t bit){
     byte |= (0b1 << bit);
 }
 
+void HalfRegister::setBit(uint8_t bit, bool value){
+    value ? setBit(bit) : clearBit(bit);
+}
+
 // Clear nth bit in register
 void HalfRegister::clearBit(uint8_t bit){
     byte &= ~(0b1 << bit);
@@ -500,7 +504,14 @@ void CPU::finish(){
     std::cout << "\n\nPC at exit: 0x" << std::hex << PC << "\n";
 }
 
+void CPU::toggleHalt(){
+    halted = !halted;
+}
+
 uint16_t CPU::executeNextOpcode(){
+    /* if (PC == 0x60){
+        std::cout << "!";
+    } */
     if (PC == 0x100){
         memoryMap.finishBooting();
     }
@@ -1187,16 +1198,10 @@ uint16_t CPU::DI(){
 
 uint16_t CPU::RLr(HalfRegister& reg){
     bool oldCarryState = isFlagSet(FLAG_CARRY);
-    bool newCarryState = reg & (0x1 << 7);
-    setFlag(FLAG_CARRY, newCarryState);
-    C = C << 1;
-    if (oldCarryState){
-        reg |= 0x1;
-    }
-    else{
-        reg &= ~0x1;
-    }
-    setFlag(FLAG_ZERO);
+    setFlag(FLAG_CARRY, reg.testBit(7));
+    reg = reg << 1;
+    reg.setBit(0, oldCarryState);
+    setFlag(FLAG_ZERO, reg == 0x00);
     clearFlag(FLAG_HALFCARRY);
     clearFlag(FLAG_SUBTRACT);
     return 8;
@@ -1204,54 +1209,37 @@ uint16_t CPU::RLr(HalfRegister& reg){
 
 uint16_t CPU::RRr(HalfRegister& reg){
     bool oldCarryState = isFlagSet(FLAG_CARRY);
-    bool newCarryState = reg & 0x1;
-    setFlag(FLAG_CARRY, newCarryState);
-    C = C >> 1;
-    if (oldCarryState){
-        reg |= (0x1 << 7);
-    }
-    else{
-        reg &= int8_t(~(0x1 << 7));
-    }
-    setFlag(FLAG_ZERO);
+    setFlag(FLAG_CARRY, reg.testBit(0));
+    reg = reg >> 1;
+    reg.setBit(7, oldCarryState);
+    setFlag(FLAG_ZERO, reg == 0x00);
     clearFlag(FLAG_HALFCARRY);
     clearFlag(FLAG_SUBTRACT);
     return 8;
 }
 
 uint16_t CPU::RLCr(HalfRegister& reg){
-    bool newCarryState = reg & (0x1 << 7);
-    C = C << 1;
-    if (newCarryState){
-        setFlag(FLAG_CARRY);
-        reg |= 0x1;
-    }
-    else{
-        clearFlag(FLAG_CARRY);
-        reg &= ~0x1;
-    }
-    setFlag(FLAG_ZERO);
+    bool newCarryState = reg.testBit(7);
+    setFlag(FLAG_CARRY, newCarryState);
+    reg = reg << 1;
+    reg.setBit(0, newCarryState);
+    setFlag(FLAG_ZERO, reg == 0x00);
     clearFlag(FLAG_HALFCARRY);
     clearFlag(FLAG_SUBTRACT);
     return 8;
 }
 
 uint16_t CPU::RRCr(HalfRegister& reg){
-    bool newCarryState = reg & 0x1;
-    C = C >> 1;
-    if (newCarryState){
-        setFlag(FLAG_CARRY);
-        reg |= (0x1 << 7);
-    }
-    else{
-        clearFlag(FLAG_CARRY);
-        reg &= int8_t(~(0x1 << 7));
-    }
-    setFlag(FLAG_ZERO);
+    bool newCarryState = reg.testBit(0);
+    setFlag(FLAG_CARRY, newCarryState);
+    reg = reg >> 1;
+    reg.setBit(7, newCarryState);
+    setFlag(FLAG_ZERO, reg == 0x00);
     clearFlag(FLAG_HALFCARRY);
     clearFlag(FLAG_SUBTRACT);
     return 8;
 }
+
 
 uint16_t CPU::RLCA(){
     RLCr(A);
@@ -1352,12 +1340,7 @@ void CPU::setFlag(uint8_t flag){
 }
 
 void CPU::setFlag(uint8_t flag, bool val){
-    if (val){
-        setFlag(flag);
-    }
-    else{
-        clearFlag(flag);
-    }
+    val ? setFlag(flag) : clearFlag(flag);
 }
 
 void CPU::clearFlag(uint8_t flag){

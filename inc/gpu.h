@@ -5,6 +5,7 @@
 #include "..\inc\cpu.h"
 
 #include <SDL.h>
+#include <array>
 
 class GPU{
 public:
@@ -25,7 +26,7 @@ private:
     bool bgTileMapArea() const;
     bool objSize() const;
     bool objEnabled() const;
-    bool bgWindowEnabled() const;
+    bool bgEnabled() const;
 
 
     // ----
@@ -39,18 +40,27 @@ private:
     void pushFrame();
 
     void resetCurrentLine();
-    uint8_t getCurrentLine();
+    uint8_t getCurrentLine() const;
     uint8_t incrementCurrentLine();
+
+    uint8_t getScrollY() const;
+    uint8_t getScrollX() const;
+
+    uint8_t getBgPalette() const;
 
     // getters for scroll x,y ; win x, y
 
     uint16_t const cyclesPerLine = 456;
     uint16_t const scanlinesPerFrame = 154;
-    uint16_t const vBlankDuration = 4560;
+    // uint16_t const vBlankDuration = 4560;
     uint16_t const hBlankDuration = 204;
     uint16_t const scanlineOAMDuration = 80;
     uint16_t const scanlineVRAMDuration = 172;
     uint16_t const linesInVBlank = 10;
+
+    uint8_t const tileWidthInPixels = 8;
+    uint8_t const tileSizeInBytes = 16;
+    uint8_t const tileMapWidth = 32;
 
     uint8_t const winWidth = 160;
     uint8_t const winHeight = 144;
@@ -67,6 +77,8 @@ private:
                                              GB_COLOUR_LIGHT, 
                                              GB_COLOUR_DARK, 
                                              GB_COLOUR_BLACK};
+
+    uint16_t const LCDControlRegAddress = 0xFF40;
 };
 
 #endif

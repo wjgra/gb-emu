@@ -4,7 +4,7 @@ GBEmulator::GBEmulator() : cpu{memoryMap}, gpu{memoryMap, cpu}{
 }
 
 bool GBEmulator::start(){
-    window = SDL_CreateWindow("GB-EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winWidth, winHeight, winFlags);
+    window = SDL_CreateWindow("GB-EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winScale * winWidth, winScale * winHeight, winFlags);
     if(!window){
         throw std::runtime_error("Failed to create SDL window");
     }
@@ -42,7 +42,6 @@ void GBEmulator::frame(){
     if (frameTime > maxFrameDuration){
         frameTime = maxFrameDuration;
     }
-
     uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
     while (cyclesSinceLastUpdate < maxCyclesThisFrame){
         uint16_t cycles = cpu.executeNextOpcode();
@@ -52,7 +51,6 @@ void GBEmulator::frame(){
         cyclesSinceLastUpdate += cycles;
     }
     cyclesSinceLastUpdate -= maxCyclesThisFrame;
-
     gpu.render();
     SDL_Event event;
     while (SDL_PollEvent(&event)){
@@ -65,8 +63,11 @@ void GBEmulator::handleEvents(SDL_Event const&  event){
     switch(event.type){
         case SDL_KEYDOWN:
             if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-                finish();
+                cpu.toggleHalt();
             }
+            break;
+        case SDL_QUIT:
+            finish();
             break;
         default:
             break;

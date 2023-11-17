@@ -24,6 +24,9 @@ void GPU::initialiseRenderer(SDL_Window* win){
 }
 
 void GPU::update(uint16_t cycles){
+
+    // DMA??
+
     if (LCDEnabled())
     {
         clock += cycles;
@@ -37,21 +40,22 @@ void GPU::update(uint16_t cycles){
                             setMode(1);
                             pushFrame();
                             cpu.requestInterrupt(0); // Issue: enum also required
-                            // request LCD interrupt
+                            cpu.requestInterrupt(1); // request LCD interrupt
                         }
                         else{
                             setMode(2);
+                            cpu.requestInterrupt(1); // request LCD interrupt
                         }
                     }
                     break;
                 // Vertical blank
                 case 1:
-                    if (clock >= vBlankDuration){
-                        clock -= vBlankDuration;
+                    if (clock >= cyclesPerLine){
+                        clock -= cyclesPerLine;
                         if (incrementCurrentLine() == winHeight + linesInVBlank){
                             setMode(2);
                             resetCurrentLine();
-                            // request LCD interrupt
+                            cpu.requestInterrupt(1); // request LCD interrupt
                         }
                     }
                     break;
@@ -68,7 +72,7 @@ void GPU::update(uint16_t cycles){
                         clock -= scanlineVRAMDuration;
                         setMode(0);
                         drawScanline();
-                        // request LCD interrupt   
+                        cpu.requestInterrupt(1); // request LCD interrupt   
                     }
                     break;
                 default:
@@ -103,8 +107,6 @@ void GPU::render(){
 // OBJ palettes: 0xFF48-49
 // WindowY: 0xFF4A
 // WindowX + 7: 0xFF4B
-
-uint16_t const LCDControlRegAddress = 0xFF40;
 
 bool GPU::LCDEnabled() const{
     HalfRegister temp = memoryMap.readByte(LCDControlRegAddress);
@@ -155,7 +157,7 @@ bool GPU::objEnabled() const{
 }
 
 // Controls whether bg and window are displayed
-bool GPU::bgWindowEnabled() const{
+bool GPU::bgEnabled() const{
     HalfRegister temp = memoryMap.readByte(LCDControlRegAddress);
     return temp.testBit(0);
 }
@@ -182,33 +184,60 @@ We use two pixel buffers, one for the bg/window, and one for objects
 // Then determine obj pixels, and composite with bgBuffer into framebuffer
 void GPU::drawScanline(){
     drawBgScanline();
-    if(windowEnabled() && bgWindowEnabled()){
+    if(windowEnabled() && bgEnabled()){
         drawWindowScanline();
     }
     // Copy current line of bg buffer into framebuffer
-    std::copy(bgBuffer.begin() + 160 * getCurrentLine(), bgBuffer.begin()  + winWidth * (getCurrentLine() + 1), framebuffer.begin() + winWidth * getCurrentLine());
+    std::copy(bgBuffer.begin() + winWidth * getCurrentLine(), bgBuffer.begin()  + winWidth * (getCurrentLine() + 1), framebuffer.begin() + winWidth * getCurrentLine());
     if(objEnabled()){
         drawObjScanline();
     }
 }
 
 void GPU::drawBgScanline(){
-    // Draw all white pixels if bg disabled
-    if(!bgWindowEnabled()){
-        for (auto it = bgBuffer.begin() + 160 * getCurrentLine(); it != bgBuffer.begin()  + winWidth * (getCurrentLine() + 1) ; ++it){
+    if(!bgEnabled()){
+        // Draw all white pixels if bg disabled
+        for (auto it = bgBuffer.begin() + winWidth * getCurrentLine(); it != bgBuffer.begin()  + winWidth * (getCurrentLine() + 1) ; ++it){
             *it = GB_COLOUR_WHITE;
         }
     }
     else{
-        // load palette
+        // Set addresses for the starts of the tile map and tile map data area respectively
+        uint16_t const tileMapAddress = bgTileMapArea() ? 0x9C00 : 0x9800;
+        uint16_t const tileMapDataAddress = bgWindowTileDataArea() ? 0x8000 : 0x9000;
+        // Get tile y tile index and y pos within tile (same for all tiles in scanline)
+        uint8_t const tileYIndex = ((getCurrentLine() + getScrollY()) / tileWidthInPixels) % tileMapWidth;
+        uint8_t const tileYPos = (getCurrentLine() + getScrollY()) % tileWidthInPixels;
+        // Load colour palette
+        std::array<uint32_t, 4> palette;
+        for (int i = 0 ; i < 4 ; ++i){
+            palette[i] = colours[(getBgPalette() >> (2 * i)) & 0b11];
+        }
+        // Draw each pixel in the scanline
+        auto it = bgBuffer.begin() + winWidth * getCurrentLine();
+        for (int x = 0 ; x < winWidth ; ++x, ++it){
+            uint8_t const tileXIndex = ((x + getScrollX()) / tileWidthInPixels) % tileMapWidth;
+            uint8_t const tileIndex = memoryMap.readByte(tileMapAddress + tileMapWidth * tileYIndex + tileXIndex);
 
-        // get tile map address (b/o mode)
+            uint16_t tileDataAddress = tileMapDataAddress;
+            if(bgWindowTileDataArea()){
+                // Unsigned tile index (starting from 0x8000)
+                tileDataAddress += tileIndex * tileSizeInBytes;
+            }
+            else{
+                // Signed tile index (centred on 0x9000)
+                tileDataAddress += static_cast<int8_t>(tileIndex) * tileSizeInBytes;
+            }
+            tileDataAddress += uint16_t(tileYPos * 2);
+            HalfRegister b1 = memoryMap.readByte(tileDataAddress);
+            HalfRegister b2 = memoryMap.readByte(tileDataAddress + 1);
 
-        // find which tile to render
+            HalfRegister bit = 7 - ((getScrollX() + x) % 8);
+            HalfRegister pLow = b1.testBit(bit) ? 0x01 : 0x00;
+            HalfRegister pHigh = b2.testBit(bit) ? 0x02 : 0x00;
 
-        // get pixel data from tile
-
-        // copy corresponding colour to bgBuffer
+            *it = palette[pLow + pHigh];
+        }
     }
 }
 
@@ -225,17 +254,35 @@ void GPU::pushFrame(){
     LCDtexture = framebuffer;
 }
 
+// Issue: consider combining below functions - possible enum?
+/* get(ENUM){
+    return readByte(LCDControlRegAddress + ENUM);
+} */
+
+uint8_t GPU::getScrollY() const{
+    return memoryMap.readByte(LCDControlRegAddress + 2);
+}
+
+uint8_t GPU::getScrollX() const{
+    return memoryMap.readByte(LCDControlRegAddress + 3);
+}
+
 void GPU::resetCurrentLine(){
     memoryMap.writeByte(LCDControlRegAddress + 4, 0);
 }
 
-uint8_t GPU::getCurrentLine(){
-    HalfRegister temp = memoryMap.readByte(LCDControlRegAddress + 4);
-    return temp;
+uint8_t GPU::getCurrentLine() const{
+    return memoryMap.readByte(LCDControlRegAddress + 4);
 }
 
 uint8_t GPU::incrementCurrentLine(){
-    HalfRegister temp = memoryMap.readByte(LCDControlRegAddress + 4);
+    uint8_t temp = getCurrentLine();
     memoryMap.writeByte(LCDControlRegAddress + 4, ++temp);
     return temp;
+}
+
+// ...
+
+uint8_t GPU::getBgPalette() const{
+    return memoryMap.readByte(LCDControlRegAddress + 7);
 }

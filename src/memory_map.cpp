@@ -6,7 +6,7 @@ uint16_t constexpr static LOWER_BYTEMASK = 0x00FF;
 MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00){
 }
 
-uint8_t MemoryMap::readByte(uint16_t address){
+uint8_t MemoryMap::readByte(uint16_t address) const{
     if (isBooting && (address < 0x0100)){
         return bootMemory[address];
     }
@@ -25,7 +25,7 @@ uint8_t MemoryMap::readByte(uint16_t address){
     }
 }
 
-uint16_t MemoryMap::readWord(uint16_t address){
+uint16_t MemoryMap::readWord(uint16_t address) const{
     return  (readByte(address + 1) << 8) + readByte(address);
 }
 
@@ -44,6 +44,10 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
         // Attempting to write to divider register clears it
         memory[address] = 0;
     }
+    else if (address == 0xFF46){
+        // DMA transfer
+        transferDMA(value);
+    }  
     else{
         memory[address] = value;
     }
@@ -81,4 +85,11 @@ bool MemoryMap::loadBinary(std::string path, std::vector<uint8_t>& target){
 
 void MemoryMap::finishBooting(){
     isBooting = false;
+}
+
+void MemoryMap::transferDMA(uint8_t value){
+    uint16_t address = value << 8;
+    for (int i = 0 ; i < 0xA0 ; ++i){
+        writeByte(0xFE00 + i, readByte(address + i));
+    }
 }
