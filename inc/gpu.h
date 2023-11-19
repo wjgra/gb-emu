@@ -48,6 +48,7 @@ private:
 
     uint8_t getBgPalette() const;
 
+    void static fillPalette(std::array<uint32_t, 4>& pal, uint16_t address);
     // getters for scroll x,y ; win x, y
 
     uint16_t const cyclesPerLine = 456;
@@ -69,16 +70,8 @@ private:
     SDL_Texture* texture;
     std::vector<uint32_t> LCDtexture, bgBuffer, framebuffer; // Issue: consider renaming
 
-    uint32_t const GB_COLOUR_BLACK = 0x00000000,
-                   GB_COLOUR_DARK  = 0x606060FF,
-                   GB_COLOUR_LIGHT = 0xC0C0C0FF,
-                   GB_COLOUR_WHITE = 0xFFFFFFFF;
-    std::array<uint32_t, 4> const colours = {GB_COLOUR_WHITE, 
-                                             GB_COLOUR_LIGHT, 
-                                             GB_COLOUR_DARK, 
-                                             GB_COLOUR_BLACK};
-
     uint16_t const LCDControlRegAddress = 0xFF40;
+
 };
 
 #endif

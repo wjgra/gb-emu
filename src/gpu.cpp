@@ -1,8 +1,10 @@
 #include "..\inc\gpu.h"
 
-
-
-
+uint32_t const static GB_COLOUR_BLACK = 0x00000000,
+                      GB_COLOUR_DARK  = 0x606060FF,
+                      GB_COLOUR_LIGHT = 0xC0C0C0FF,
+                      GB_COLOUR_WHITE = 0xFFFFFFFF;
+std::array<uint32_t, 4> const static colours = {GB_COLOUR_WHITE, GB_COLOUR_LIGHT, GB_COLOUR_DARK, GB_COLOUR_BLACK};
 
 GPU::GPU(MemoryMap& memMap, CPU& proc) : memoryMap{memMap}, cpu{proc}, clock{0}{
 }
@@ -113,7 +115,7 @@ bool GPU::LCDEnabled() const{
     return temp.testBit(7);
 }
 
-// Determines which background map used for window rendering
+// Determines which background map to use for window rendering
 // Unset: 0x9800 tilemap used
 // Set: 0x9C00 tilemap used
 bool GPU::windowTileMapArea() const{
@@ -194,6 +196,12 @@ void GPU::drawScanline(){
     }
 }
 
+void GPU::fillPalette(std::array<uint32_t, 4>& pal, uint16_t data){
+    for (int i = 0 ; i < 4 ; ++i){
+            pal[i] = colours[(data >> (2 * i)) & 0b11];
+        }
+}  
+
 void GPU::drawBgScanline(){
     if(!bgEnabled()){
         // Draw all white pixels if bg disabled
@@ -210,9 +218,10 @@ void GPU::drawBgScanline(){
         uint8_t const tileYPos = (getCurrentLine() + getScrollY()) % tileWidthInPixels;
         // Load colour palette
         std::array<uint32_t, 4> palette;
-        for (int i = 0 ; i < 4 ; ++i){
+        fillPalette(palette, getBgPalette());
+/*         for (int i = 0 ; i < 4 ; ++i){
             palette[i] = colours[(getBgPalette() >> (2 * i)) & 0b11];
-        }
+        } */
         // Draw each pixel in the scanline
         auto it = bgBuffer.begin() + winWidth * getCurrentLine();
         for (int x = 0 ; x < winWidth ; ++x, ++it){

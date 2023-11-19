@@ -338,7 +338,7 @@ void CPU::initOpcodeInfo(){
 
     opcodeInfo[0xC5] = "PUSH BC to stack";
     opcodeInfo[0xC6] = "ADD A, u8";
-
+    opcodeInfo[0xC7] = "RST 0x00";
     opcodeInfo[0xC8] = "RET Z";
     opcodeInfo[0xC9] = "RET";
     opcodeInfo[0xC3] = "JP Z, u16";
@@ -346,7 +346,7 @@ void CPU::initOpcodeInfo(){
 
     opcodeInfo[0xCD] = "CALL (PC)";
 
-
+    opcodeInfo[0xCF] = "RST 0x08";
     opcodeInfo[0xD0] = "RET NC";
     opcodeInfo[0xD1] = "POP stack to DE";
     opcodeInfo[0xD2] = "JP NC, u16";
@@ -354,7 +354,7 @@ void CPU::initOpcodeInfo(){
 
     opcodeInfo[0xD5] = "PUSH DE to stack";
     opcodeInfo[0xD6] = "SUB A, (PC)";
-
+    opcodeInfo[0xD7] = "RST 0x10";
     opcodeInfo[0xD8] = "RET C";
     opcodeInfo[0xD9] = "RETI";
     opcodeInfo[0xDA] = "JP C, u16";
@@ -362,7 +362,7 @@ void CPU::initOpcodeInfo(){
 
     // No 0xDD opcode
 
-
+    opcodeInfo[0xDF] = "RST 0x18";
     opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
@@ -370,7 +370,7 @@ void CPU::initOpcodeInfo(){
     // No 0xE4 opcode
     opcodeInfo[0xE5] = "PUSH HL to stack";
     opcodeInfo[0xE6] = "AND A, u8";
-
+    opcodeInfo[0xE7] = "RST 0x20";
     // opcodeInfo[0xE8] = "ADD SP, i8";
     opcodeInfo[0xE9] = "JP HL";
     opcodeInfo[0xEA] = "LD (u16) from A";
@@ -378,7 +378,7 @@ void CPU::initOpcodeInfo(){
     // No 0xEC opcode
     // No 0xED opcode
     opcodeInfo[0xEE] = "XOR A with u8";
-
+    opcodeInfo[0xEF] = "RST 0x28";
     opcodeInfo[0xF0] = "LD A from (0xFF00+u8)";
     opcodeInfo[0xF1] = "POP stack to AF";
     opcodeInfo[0xF2] = "LD A from (0xFF00+C)";
@@ -387,7 +387,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xF5] = "PUSH AF to stack";
     opcodeInfo[0xF5] = "OR A, u8";
 
-
+    opcodeInfo[0xF7] = "RST 0x30";
     // opcodeInfo[0xF8] = "LD ????;
     opcodeInfo[0xF9] = "LD SP from HL";
     opcodeInfo[0xFA] = "LD A from (u16)";
@@ -395,6 +395,7 @@ void CPU::initOpcodeInfo(){
     // No 0xFC opcode
     // No 0xFD opcode
     opcodeInfo[0xFE] = "CP A, u8";
+    opcodeInfo[0xFF] = "RST 0x38";
 
     opcodeCBInfo = std::vector<std::string>(0x100, "");
     opcodeCBInfo[0x00] = "RLC B";
@@ -430,7 +431,14 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x1E] = "RR (HL)";
     opcodeCBInfo[0x1F] = "RR A";
 
-
+    opcodeCBInfo[0x30] = "SWAP B";
+    opcodeCBInfo[0x31] = "SWAP C";
+    opcodeCBInfo[0x32] = "SWAP D";
+    opcodeCBInfo[0x33] = "SWAP E";
+    opcodeCBInfo[0x34] = "SWAP H";
+    opcodeCBInfo[0x35] = "SWAP L";
+    opcodeCBInfo[0x36] = "SWAP HL";
+    opcodeCBInfo[0x37] = "SWAP A";
 
     opcodeCBInfo[0x40] = "BIT 0, B";
     opcodeCBInfo[0x41] = "BIT 0, C";
@@ -438,7 +446,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x43] = "BIT 0, E";
     opcodeCBInfo[0x44] = "BIT 0, H";
     opcodeCBInfo[0x45] = "BIT 0, L";
-    // BIT 0, (HL)
+    opcodeCBInfo[0x46] = "BIT 0, (HL)";
     opcodeCBInfo[0x47] = "BIT 0, A";
     opcodeCBInfo[0x48] = "BIT 1, B";
     opcodeCBInfo[0x49] = "BIT 1, C";
@@ -446,7 +454,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x4B] = "BIT 1, E";
     opcodeCBInfo[0x4C] = "BIT 1, H";
     opcodeCBInfo[0x4D] = "BIT 1, L";
-    // BIT 1, (HL)
+    opcodeCBInfo[0x4E] = "BIT 1, (HL)";
     opcodeCBInfo[0x4F] = "BIT 1, A";
     opcodeCBInfo[0x50] = "BIT 2, B";
     opcodeCBInfo[0x51] = "BIT 2, C";
@@ -454,7 +462,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x53] = "BIT 2, E";
     opcodeCBInfo[0x54] = "BIT 2, H";
     opcodeCBInfo[0x55] = "BIT 2, L";
-    // BIT 2, (HL)
+    opcodeCBInfo[0x56] = "BIT 2, (HL)";
     opcodeCBInfo[0x57] = "BIT 2, A";
     opcodeCBInfo[0x58] = "BIT 3, B";
     opcodeCBInfo[0x59] = "BIT 3, C";
@@ -462,7 +470,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x5B] = "BIT 3, E";
     opcodeCBInfo[0x5C] = "BIT 3, H";
     opcodeCBInfo[0x5D] = "BIT 3, L";
-    // BIT 3, (HL)
+    opcodeCBInfo[0x5E] = "BIT 3, (HL)";
     opcodeCBInfo[0x5F] = "BIT 3, A";
     opcodeCBInfo[0x60] = "BIT 4, B";
     opcodeCBInfo[0x61] = "BIT 4, C";
@@ -470,7 +478,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x63] = "BIT 4, E";
     opcodeCBInfo[0x64] = "BIT 4, H";
     opcodeCBInfo[0x65] = "BIT 4, L";
-    // BIT 4, (HL)
+    opcodeCBInfo[0x66] = "BIT 4, (HL)";
     opcodeCBInfo[0x67] = "BIT 4, A";
     opcodeCBInfo[0x68] = "BIT 5, B";
     opcodeCBInfo[0x69] = "BIT 5, C";
@@ -478,7 +486,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x6B] = "BIT 5, E";
     opcodeCBInfo[0x6C] = "BIT 5, H";
     opcodeCBInfo[0x6D] = "BIT 5, L";
-    // BIT 5, (HL)
+    opcodeCBInfo[0x6E] = "BIT 5, (HL)";
     opcodeCBInfo[0x6F] = "BIT 5, A";
     opcodeCBInfo[0x70] = "BIT 6, B";
     opcodeCBInfo[0x71] = "BIT 6, C";
@@ -486,7 +494,7 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x73] = "BIT 6, E";
     opcodeCBInfo[0x74] = "BIT 6, H";
     opcodeCBInfo[0x75] = "BIT 6, L";
-    // BIT 6, (HL)
+    opcodeCBInfo[0x76] = "BIT 6, (HL)";
     opcodeCBInfo[0x77] = "BIT 6, A";
     opcodeCBInfo[0x78] = "BIT 7, B";
     opcodeCBInfo[0x79] = "BIT 7, C";
@@ -494,9 +502,136 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x7B] = "BIT 7, E";
     opcodeCBInfo[0x7C] = "BIT 7, H";
     opcodeCBInfo[0x7D] = "BIT 7, L";
-    // BIT 7, (HL)
+    opcodeCBInfo[0x7E] = "BIT 7, (HL)";
     opcodeCBInfo[0x7F] = "BIT 7, A";
-    // 0x80 - 0xFF
+    opcodeCBInfo[0x80] = "RES 0, B";
+    opcodeCBInfo[0x81] = "RES 0, C";
+    opcodeCBInfo[0x82] = "RES 0, D";
+    opcodeCBInfo[0x83] = "RES 0, E";
+    opcodeCBInfo[0x84] = "RES 0, H";
+    opcodeCBInfo[0x85] = "RES 0, L";
+    opcodeCBInfo[0x86] = "RES 0, (HL)";
+    opcodeCBInfo[0x87] = "RES 0, A";
+    opcodeCBInfo[0x88] = "RES 1, B";
+    opcodeCBInfo[0x89] = "RES 1, C";
+    opcodeCBInfo[0x8A] = "RES 1, D";
+    opcodeCBInfo[0x8B] = "RES 1, E";
+    opcodeCBInfo[0x8C] = "RES 1, H";
+    opcodeCBInfo[0x8D] = "RES 1, L";
+    opcodeCBInfo[0x8E] = "RES 1, (HL)";
+    opcodeCBInfo[0x8F] = "RES 1, A";
+    opcodeCBInfo[0x90] = "RES 2, B";
+    opcodeCBInfo[0x91] = "RES 2, C";
+    opcodeCBInfo[0x92] = "RES 2, D";
+    opcodeCBInfo[0x93] = "RES 2, E";
+    opcodeCBInfo[0x94] = "RES 2, H";
+    opcodeCBInfo[0x95] = "RES 2, L";
+    opcodeCBInfo[0x96] = "RES 2, (HL)";
+    opcodeCBInfo[0x97] = "RES 2, A";
+    opcodeCBInfo[0x98] = "RES 3, B";
+    opcodeCBInfo[0x99] = "RES 3, C";
+    opcodeCBInfo[0x9A] = "RES 3, D";
+    opcodeCBInfo[0x9B] = "RES 3, E";
+    opcodeCBInfo[0x9C] = "RES 3, H";
+    opcodeCBInfo[0x9D] = "RES 3, L";
+    opcodeCBInfo[0x9E] = "RES 3, (HL)";
+    opcodeCBInfo[0x9F] = "RES 3, A";
+    opcodeCBInfo[0xA0] = "RES 4, B";
+    opcodeCBInfo[0xA1] = "RES 4, C";
+    opcodeCBInfo[0xA2] = "RES 4, D";
+    opcodeCBInfo[0xA3] = "RES 4, E";
+    opcodeCBInfo[0xA4] = "RES 4, H";
+    opcodeCBInfo[0xA5] = "RES 4, L";
+    opcodeCBInfo[0xA6] = "RES 4, (HL)";
+    opcodeCBInfo[0xA7] = "RES 4, A";
+    opcodeCBInfo[0xA8] = "RES 5, B";
+    opcodeCBInfo[0xA9] = "RES 5, C";
+    opcodeCBInfo[0xAA] = "RES 5, D";
+    opcodeCBInfo[0xAB] = "RES 5, E";
+    opcodeCBInfo[0xAC] = "RES 5, H";
+    opcodeCBInfo[0xAD] = "RES 5, L";
+    opcodeCBInfo[0xAE] = "RES 5, (HL)";
+    opcodeCBInfo[0xAF] = "RES 5, A";
+    opcodeCBInfo[0xB0] = "RES 6, B";
+    opcodeCBInfo[0xB1] = "RES 6, C";
+    opcodeCBInfo[0xB2] = "RES 6, D";
+    opcodeCBInfo[0xB3] = "RES 6, E";
+    opcodeCBInfo[0xB4] = "RES 6, H";
+    opcodeCBInfo[0xB5] = "RES 6, L";
+    opcodeCBInfo[0xB6] = "RES 6, (HL)";
+    opcodeCBInfo[0xB7] = "RES 6, A";
+    opcodeCBInfo[0xB8] = "RES 7, B";
+    opcodeCBInfo[0xB9] = "RES 7, C";
+    opcodeCBInfo[0xBA] = "RES 7, D";
+    opcodeCBInfo[0xBB] = "RES 7, E";
+    opcodeCBInfo[0xBC] = "RES 7, H";
+    opcodeCBInfo[0xBD] = "RES 7, L";
+    opcodeCBInfo[0xBE] = "RES 7, (HL)";
+    opcodeCBInfo[0xBF] = "RES 7, A";
+    opcodeCBInfo[0xC0] = "SET 0, B";
+    opcodeCBInfo[0xC1] = "SET 0, C";
+    opcodeCBInfo[0xC2] = "SET 0, D";
+    opcodeCBInfo[0xC3] = "SET 0, E";
+    opcodeCBInfo[0xC4] = "SET 0, H";
+    opcodeCBInfo[0xC5] = "SET 0, L";
+    opcodeCBInfo[0xC6] = "SET 0, (HL)";
+    opcodeCBInfo[0xC7] = "SET 0, A";
+    opcodeCBInfo[0xC8] = "SET 1, B";
+    opcodeCBInfo[0xC9] = "SET 1, C";
+    opcodeCBInfo[0xCA] = "SET 1, D";
+    opcodeCBInfo[0xCB] = "SET 1, E";
+    opcodeCBInfo[0xCC] = "SET 1, H";
+    opcodeCBInfo[0xCD] = "SET 1, L";
+    opcodeCBInfo[0xCE] = "SET 1, (HL)";
+    opcodeCBInfo[0xCF] = "SET 1, A";
+    opcodeCBInfo[0xD0] = "SET 2, B";
+    opcodeCBInfo[0xD1] = "SET 2, C";
+    opcodeCBInfo[0xD2] = "SET 2, D";
+    opcodeCBInfo[0xD3] = "SET 2, E";
+    opcodeCBInfo[0xD4] = "SET 2, H";
+    opcodeCBInfo[0xD5] = "SET 2, L";
+    opcodeCBInfo[0xD6] = "SET 2, (HL)";
+    opcodeCBInfo[0xD7] = "SET 2, A";
+    opcodeCBInfo[0xD8] = "SET 3, B";
+    opcodeCBInfo[0xD9] = "SET 3, C";
+    opcodeCBInfo[0xDA] = "SET 3, D";
+    opcodeCBInfo[0xDB] = "SET 3, E";
+    opcodeCBInfo[0xDC] = "SET 3, H";
+    opcodeCBInfo[0xDD] = "SET 3, L";
+    opcodeCBInfo[0xDE] = "SET 3, (HL)";
+    opcodeCBInfo[0xDF] = "SET 3, A";
+    opcodeCBInfo[0xE0] = "SET 4, B";
+    opcodeCBInfo[0xE1] = "SET 4, C";
+    opcodeCBInfo[0xE2] = "SET 4, D";
+    opcodeCBInfo[0xE3] = "SET 4, E";
+    opcodeCBInfo[0xE4] = "SET 4, H";
+    opcodeCBInfo[0xE5] = "SET 4, L";
+    opcodeCBInfo[0xE6] = "SET 4, (HL)";
+    opcodeCBInfo[0xE7] = "SET 4, A";
+    opcodeCBInfo[0xE8] = "SET 5, B";
+    opcodeCBInfo[0xE9] = "SET 5, C";
+    opcodeCBInfo[0xEA] = "SET 5, D";
+    opcodeCBInfo[0xEB] = "SET 5, E";
+    opcodeCBInfo[0xEC] = "SET 5, H";
+    opcodeCBInfo[0xED] = "SET 5, L";
+    opcodeCBInfo[0xEE] = "SET 5, (HL)";
+    opcodeCBInfo[0xEF] = "SET 5, A";
+    opcodeCBInfo[0xF0] = "SET 6, B";
+    opcodeCBInfo[0xF1] = "SET 6, C";
+    opcodeCBInfo[0xF2] = "SET 6, D";
+    opcodeCBInfo[0xF3] = "SET 6, E";
+    opcodeCBInfo[0xF4] = "SET 6, H";
+    opcodeCBInfo[0xF5] = "SET 6, L";
+    opcodeCBInfo[0xF6] = "SET 6, (HL)";
+    opcodeCBInfo[0xF7] = "SET 6, A";
+    opcodeCBInfo[0xF8] = "SET 7, B";
+    opcodeCBInfo[0xF9] = "SET 7, C";
+    opcodeCBInfo[0xFA] = "SET 7, D";
+    opcodeCBInfo[0xFB] = "SET 7, E";
+    opcodeCBInfo[0xFC] = "SET 7, H";
+    opcodeCBInfo[0xFD] = "SET 7, L";
+    opcodeCBInfo[0xFE] = "SET 7, (HL)";
+    opcodeCBInfo[0xFF] = "SET 7, A";
 }
 
 void CPU::finish(){
@@ -716,13 +851,15 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
     case 0xC5: return PUSHrr(BC);
     case 0xC6: return ADDru8(A);
-
+    case 0xC7: return RST(0x00);
     case 0xC8: return RETcc(FLAG_ZERO, true);
     case 0xC9: return RET();
     case 0xCA: return JPccu16(FLAG_ZERO, true);
     case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
 
     case 0xCD: return CALLnn();
+
+    case 0xCF: return RST(0x08);
     case 0xD0: return RETcc(FLAG_CARRY, false);
     case 0xD1: return POPrr(DE);
 
@@ -730,40 +867,41 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
-
+    case 0xD7: return RST(0x10);
     case 0xD8: return RETcc(FLAG_CARRY, true);
     case 0xD9: return RETI();
     case 0xDA: return JPccu16(FLAG_CARRY, true);
 
 
-
+    case 0xDF: return RST(0x18);
     case 0xE0: return LDFFu8r(A);
     case 0xE1: return POPrr(HL);
     case 0xE2: return LDnnr(0xFF00 + C, A);
 
     case 0xE5: return PUSHrr(HL);
     case 0xE6: return ANDAu8();
+    case 0xE7: return RST(0x20);
     // case 0xE8: ADD SP, i8 ???
     case 0xE9: return JPnn(HL);
     case 0xEA: return LDu16r(A);
 
 
     case 0xEE: return XORAu8();
-
+    case 0xEF: return RST(0x28);
     case 0xF0: return LDrFFu8(A);
     case 0xF1: return POPrr(AF);
     case 0xF2: return LDrnn(A, 0xFF00 + C);
     case 0xF3: return DI();
     case 0xF5: return PUSHrr(AF);
     case 0xF6: return ORAu8();
+    case 0xF7: return RST(0x30);
     // case 0xF8????
-
     case 0xF9: return LDrrrr(SP, HL);
     case 0xFA: return LDru16(A);
     case 0xFB: return EI();
 
     case 0xFE: return CPru8(A);
-
+    case 0xFF: return RST(0x38);
     default:     
         printRecentOpcodes();   
         std::cout << "unimplemented!\n";
@@ -809,13 +947,24 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x1D: return RRr(L);
     // case 0x1E: return RRr((HL));
     case 0x1F: return RRr(A);
+
+
+    case 0x30: return SWAPr(B);
+    case 0x31: return SWAPr(C);
+    case 0x32: return SWAPr(D);
+    case 0x33: return SWAPr(E);
+    case 0x34: return SWAPr(H);
+    case 0x35: return SWAPr(L);
+    case 0x36: return SWAPHL();
+    case 0x37: return SWAPr(A);
+
     case 0x40: return BITbr(0, B);
     case 0x41: return BITbr(0, C);
     case 0x42: return BITbr(0, D);
     case 0x43: return BITbr(0, E);
     case 0x44: return BITbr(0, H);
     case 0x45: return BITbr(0, L);
-    // 0x46
+    case 0x46: return BITbnn(0, HL);
     case 0x47: return BITbr(0, A);
     case 0x48: return BITbr(1, B);
     case 0x49: return BITbr(1, C);
@@ -823,7 +972,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x4B: return BITbr(1, E);
     case 0x4C: return BITbr(1, H);
     case 0x4D: return BITbr(1, L);
-    // 0x4E
+    case 0x4E: return BITbnn(1, HL);
     case 0x4F: return BITbr(1, A);
     case 0x50: return BITbr(2, B);
     case 0x51: return BITbr(2, C);
@@ -831,7 +980,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x53: return BITbr(2, E);
     case 0x54: return BITbr(2, H);
     case 0x55: return BITbr(2, L);
-    // 0x56
+    case 0x56: return BITbnn(2, HL);
     case 0x57: return BITbr(2, A);
     case 0x58: return BITbr(3, B);
     case 0x59: return BITbr(3, C);
@@ -839,7 +988,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x5B: return BITbr(3, E);
     case 0x5C: return BITbr(3, H);
     case 0x5D: return BITbr(3, L);
-    // 0x5E
+    case 0x5E: return BITbnn(3, HL);
     case 0x5F: return BITbr(3, A);
     case 0x60: return BITbr(4, B);
     case 0x61: return BITbr(4, C);
@@ -847,7 +996,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x63: return BITbr(4, E);
     case 0x64: return BITbr(4, H);
     case 0x65: return BITbr(4, L);
-    // 0x66
+    case 0x66: return BITbnn(4, HL);
     case 0x67: return BITbr(4, A);
     case 0x68: return BITbr(5, B);
     case 0x69: return BITbr(5, C);
@@ -855,7 +1004,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x6B: return BITbr(5, E);
     case 0x6C: return BITbr(5, H);
     case 0x6D: return BITbr(5, L);
-    // 0x6E
+    case 0x6E: return BITbnn(5, HL);
     case 0x6F: return BITbr(5, A);
     case 0x70: return BITbr(6, B);
     case 0x71: return BITbr(6, C);
@@ -863,7 +1012,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x73: return BITbr(6, E);
     case 0x74: return BITbr(6, H);
     case 0x75: return BITbr(6, L);
-    // 0x76
+    case 0x76: return BITbnn(6, HL);
     case 0x77: return BITbr(6, A);
     case 0x78: return BITbr(7, B);
     case 0x79: return BITbr(7, C);
@@ -871,8 +1020,136 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x7B: return BITbr(7, E);
     case 0x7C: return BITbr(7, H);
     case 0x7D: return BITbr(7, L);
-    // 0x7E
+    case 0x7E: return BITbnn(7, HL);
     case 0x7F: return BITbr(7, A);
+    case 0x80: return RESbr(0,B);
+    case 0x81: return RESbr(0,C);
+    case 0x82: return RESbr(0,D);
+    case 0x83: return RESbr(0,E);
+    case 0x84: return RESbr(0,H);
+    case 0x85: return RESbr(0,L);
+    case 0x86: return RESbnn(0,HL);
+    case 0x87: return RESbr(0,A);
+    case 0x88: return RESbr(1,B);
+    case 0x89: return RESbr(1,C);
+    case 0x8A: return RESbr(1,D);
+    case 0x8B: return RESbr(1,E);
+    case 0x8C: return RESbr(1,H);
+    case 0x8D: return RESbr(1,L);
+    case 0x8E: return RESbnn(1,HL);
+    case 0x8F: return RESbr(1,A);
+    case 0x90: return RESbr(2,B);
+    case 0x91: return RESbr(2,C);
+    case 0x92: return RESbr(2,D);
+    case 0x93: return RESbr(2,E);
+    case 0x94: return RESbr(2,H);
+    case 0x95: return RESbr(2,L);
+    case 0x96: return RESbnn(2,HL);
+    case 0x97: return RESbr(2,A);
+    case 0x98: return RESbr(3,B);
+    case 0x99: return RESbr(3,C);
+    case 0x9A: return RESbr(3,D);
+    case 0x9B: return RESbr(3,E);
+    case 0x9C: return RESbr(3,H);
+    case 0x9D: return RESbr(3,L);
+    case 0x9E: return RESbnn(3,HL);
+    case 0x9F: return RESbr(3,A);
+    case 0xA0: return RESbr(4,B);
+    case 0xA1: return RESbr(4,C);
+    case 0xA2: return RESbr(4,D);
+    case 0xA3: return RESbr(4,E);
+    case 0xA4: return RESbr(4,H);
+    case 0xA5: return RESbr(4,L);
+    case 0xA6: return RESbnn(4,HL);
+    case 0xA7: return RESbr(4,A);
+    case 0xA8: return RESbr(5,B);
+    case 0xA9: return RESbr(5,C);
+    case 0xAA: return RESbr(5,D);
+    case 0xAB: return RESbr(5,E);
+    case 0xAC: return RESbr(5,H);
+    case 0xAD: return RESbr(5,L);
+    case 0xAE: return RESbnn(5,HL);
+    case 0xAF: return RESbr(5,A);
+    case 0xB0: return RESbr(6,B);
+    case 0xB1: return RESbr(6,C);
+    case 0xB2: return RESbr(6,D);
+    case 0xB3: return RESbr(6,E);
+    case 0xB4: return RESbr(6,H);
+    case 0xB5: return RESbr(6,L);
+    case 0xB6: return RESbnn(6,HL);
+    case 0xB7: return RESbr(6,A);
+    case 0xB8: return RESbr(7,B);
+    case 0xB9: return RESbr(7,C);
+    case 0xBA: return RESbr(7,D);
+    case 0xBB: return RESbr(7,E);
+    case 0xBC: return RESbr(7,H);
+    case 0xBD: return RESbr(7,L);
+    case 0xBE: return RESbnn(7,HL);
+    case 0xBF: return RESbr(7,A);
+    case 0xC0: return SETbr(0,B);
+    case 0xC1: return SETbr(0,C);
+    case 0xC2: return SETbr(0,D);
+    case 0xC3: return SETbr(0,E);
+    case 0xC4: return SETbr(0,H);
+    case 0xC5: return SETbr(0,L);
+    case 0xC6: return SETbnn(0,HL);
+    case 0xC7: return SETbr(0,A);
+    case 0xC8: return SETbr(1,B);
+    case 0xC9: return SETbr(1,C);
+    case 0xCA: return SETbr(1,D);
+    case 0xCB: return SETbr(1,E);
+    case 0xCC: return SETbr(1,H);
+    case 0xCD: return SETbr(1,L);
+    case 0xCE: return SETbnn(1,HL);
+    case 0xCF: return SETbr(1,A);
+    case 0xD0: return SETbr(2,B);
+    case 0xD1: return SETbr(2,C);
+    case 0xD2: return SETbr(2,D);
+    case 0xD3: return SETbr(2,E);
+    case 0xD4: return SETbr(2,H);
+    case 0xD5: return SETbr(2,L);
+    case 0xD6: return SETbnn(2,HL);
+    case 0xD7: return SETbr(2,A);
+    case 0xD8: return SETbr(3,B);
+    case 0xD9: return SETbr(3,C);
+    case 0xDA: return SETbr(3,D);
+    case 0xDB: return SETbr(3,E);
+    case 0xDC: return SETbr(3,H);
+    case 0xDD: return SETbr(3,L);
+    case 0xDE: return SETbnn(3,HL);
+    case 0xDF: return SETbr(3,A);
+    case 0xE0: return SETbr(4,B);
+    case 0xE1: return SETbr(4,C);
+    case 0xE2: return SETbr(4,D);
+    case 0xE3: return SETbr(4,E);
+    case 0xE4: return SETbr(4,H);
+    case 0xE5: return SETbr(4,L);
+    case 0xE6: return SETbnn(4,HL);
+    case 0xE7: return SETbr(4,A);
+    case 0xE8: return SETbr(5,B);
+    case 0xE9: return SETbr(5,C);
+    case 0xEA: return SETbr(5,D);
+    case 0xEB: return SETbr(5,E);
+    case 0xEC: return SETbr(5,H);
+    case 0xED: return SETbr(5,L);
+    case 0xEE: return SETbnn(5,HL);
+    case 0xEF: return SETbr(5,A);
+    case 0xF0: return SETbr(6,B);
+    case 0xF1: return SETbr(6,C);
+    case 0xF2: return SETbr(6,D);
+    case 0xF3: return SETbr(6,E);
+    case 0xF4: return SETbr(6,H);
+    case 0xF5: return SETbr(6,L);
+    case 0xF6: return SETbnn(6,HL);
+    case 0xF7: return SETbr(6,A);
+    case 0xF8: return SETbr(7,B);
+    case 0xF9: return SETbr(7,C);
+    case 0xFA: return SETbr(7,D);
+    case 0xFB: return SETbr(7,E);
+    case 0xFC: return SETbr(7,H);
+    case 0xFD: return SETbr(7,L);
+    case 0xFE: return SETbnn(7,HL);
+    case 0xFF: return SETbr(7,A);
     default:
         printRecentOpcodes();
         std::cout << "unimplemented!\n";
@@ -1167,14 +1444,6 @@ uint16_t CPU::CPL(){
     return 4;
 }
 
-uint16_t CPU::CALLnn(){
-    uint16_t nn = readWordAtPC();
-    SP -= 2;
-    memoryMap.writeWord(SP, PC);
-    PC = nn;
-    return 24;
-}
-
 uint16_t CPU::BITbr(uint8_t bit, HalfRegister reg){
     setFlag(FLAG_ZERO, !reg.testBit(bit));
     setFlag(FLAG_HALFCARRY);
@@ -1183,7 +1452,32 @@ uint16_t CPU::BITbr(uint8_t bit, HalfRegister reg){
 }
 
 uint16_t CPU::BITbnn(uint8_t bit, uint16_t address){
-    return BITbr(bit, memoryMap.readByte(address));
+    BITbr(bit, memoryMap.readByte(address));
+    return 12;
+}
+
+uint16_t CPU::SETbr(uint8_t bit, HalfRegister reg){
+    reg.setBit(bit);
+    return 8;
+}
+
+uint16_t CPU::SETbnn(uint8_t bit, uint16_t address){
+    HalfRegister tempReg = memoryMap.readByte(address);
+    tempReg.setBit(bit);
+    memoryMap.writeByte(address, tempReg);
+    return 16;
+}
+
+uint16_t CPU::RESbr(uint8_t bit, HalfRegister reg){
+    reg.clearBit(bit);
+    return 8;
+}
+
+uint16_t CPU::RESbnn(uint8_t bit, uint16_t address){
+    HalfRegister tempReg = memoryMap.readByte(address);
+    tempReg.clearBit(bit);
+    memoryMap.writeByte(address, tempReg);
+    return 16;
 }
 
 uint16_t CPU::EI(){
@@ -1265,6 +1559,23 @@ uint16_t CPU::RRA(){
     return 4;
 }
 
+uint16_t CPU::SWAPr(HalfRegister& reg){
+    reg = ((reg & 0x0F) << 4) | ((reg & 0xF0) >> 4);
+    setFlag(FLAG_ZERO, reg == 0x00);
+    clearFlag(FLAG_CARRY);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 8;
+}
+
+uint16_t CPU::SWAPHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    SWAPr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
+
+
 uint16_t CPU::JPnn(uint16_t address){
     PC = address;
     return 4;
@@ -1302,6 +1613,13 @@ uint16_t CPU::JRcce(uint8_t condition, bool positiveCondition){
     }
 }
 
+uint16_t CPU::CALLnn(){
+    uint16_t nn = readWordAtPC();
+    SP -= 2;
+    memoryMap.writeWord(SP, PC);
+    PC = nn;
+    return 24;
+}
 
 uint16_t CPU::RET(){
     PC = memoryMap.readWord(SP);
@@ -1323,6 +1641,13 @@ uint16_t CPU::RETcc(uint8_t condition, bool positiveCondition){
 uint16_t CPU::RETI(){
     EI();
     return RET();
+}
+
+uint16_t CPU::RST(uint8_t address){
+    SP -= 2;
+    memoryMap.writeWord(SP, PC);
+    PC = address;
+    return 16;
 }
 
 uint8_t CPU::readByteAtPC(){

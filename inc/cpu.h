@@ -92,7 +92,6 @@ private:
 
     uint16_t POPrr(Register& targetReg);
     uint16_t PUSHrr(Register& dataReg);
-    uint16_t CALLnn();
 
     uint16_t XORAr(HalfRegister reg);
     uint16_t XORAnn(uint16_t dataAddress);
@@ -128,9 +127,12 @@ private:
     uint16_t CPru8(HalfRegister& reg);
     uint16_t CPL();
 
-    // CB
     uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
     uint16_t BITbnn(uint8_t bit, uint16_t address);
+    uint16_t SETbr(uint8_t bit, HalfRegister reg);
+    uint16_t SETbnn(uint8_t bit, uint16_t address);
+    uint16_t RESbr(uint8_t bit, HalfRegister reg);
+    uint16_t RESbnn(uint8_t bit, uint16_t address);
 
     uint16_t EI();
     uint16_t DI();
@@ -149,15 +151,22 @@ private:
     uint16_t RRCA();
     uint16_t RRA();
 
+    uint16_t SWAPr(HalfRegister& reg);
+    uint16_t SWAPHL();
+
     uint16_t JPnn(uint16_t address);
     uint16_t JPu16();
     uint16_t JPccu16(uint8_t condition, bool positiveCondition);
     uint16_t JRe();
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
+    uint16_t CALLnn();
+
     uint16_t RET();
     uint16_t RETcc(uint8_t condition, bool positiveCondition);
     uint16_t RETI();
+
+    uint16_t RST(uint8_t address);
 
     // Utility functions
     
