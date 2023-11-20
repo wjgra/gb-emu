@@ -15,7 +15,7 @@ bool GBEmulator::start(){
         throw std::runtime_error("Failed to load boot program");
     }
     std::cout << "Loaded boot program\n";
-    if (!memoryMap.loadCartridge(".//input//tetris.gb")){
+    if (!memoryMap.loadCartridge(".//input//cpu_instrs.gb")){
         throw std::runtime_error("Failed to load cartridge");
     }
     std::cout << "Loaded cartridge\n";

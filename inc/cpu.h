@@ -76,8 +76,9 @@ private:
     uint8_t readByteAtPC();
 
     // Instruction set - return type is #(cycles to execute opcode)
-    uint16_t NOP(); // NOP (0x00)
+    uint16_t NOP();
 
+    // Load operations
     uint16_t LDrru16(Register& targetReg);
     uint16_t LDnnr(uint16_t targetAddress, HalfRegister dataReg);
     uint16_t LDrnn(HalfRegister& targetReg, uint16_t dataAddress);
@@ -90,43 +91,44 @@ private:
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
 
+    // Stack operations
     uint16_t POPrr(Register& targetReg);
     uint16_t PUSHrr(Register& dataReg);
 
+    // Logical operations
     uint16_t XORAr(HalfRegister reg);
     uint16_t XORAnn(uint16_t dataAddress);
     uint16_t XORAu8();
     uint16_t ORAr(HalfRegister reg);
     uint16_t ORAnn(uint16_t dataAddress);
     uint16_t ORAu8();
-
     uint16_t ANDAr(HalfRegister reg);
     uint16_t ANDAnn(uint16_t dataAddress);
     uint16_t ANDAu8();
 
+    // Arithmetic operations
     uint16_t INCrr(Register& reg);
     uint16_t INCr(HalfRegister& reg);
     uint16_t INCnn(uint16_t targetAddress);
-
     uint16_t DECrr(Register& reg);
     uint16_t DECr(HalfRegister& reg);
     uint16_t DECnn(uint16_t targetAddress);
-
     uint16_t ADDrrrr(Register& x, Register& y);
     uint16_t ADDrr(HalfRegister& x, HalfRegister& y);
     uint16_t ADDrnn(HalfRegister& x, uint16_t targetAddress);
     uint16_t ADDru8(HalfRegister& reg);
     // uint16_t ADDSPi8();
-
     uint16_t SUBrr(HalfRegister& x, HalfRegister& y);
     uint16_t SUBrnn(HalfRegister& x, uint16_t targetAddress);
     uint16_t SUBru8(HalfRegister& reg);
 
+    // Compare registers
     uint16_t CPrr(HalfRegister& x, HalfRegister& y);
     uint16_t CPrnn(HalfRegister& reg, uint16_t targetAddress);
     uint16_t CPru8(HalfRegister& reg);
     uint16_t CPL();
 
+    // Bit operations (test, set, clear)
     uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
     uint16_t BITbnn(uint8_t bit, uint16_t address);
     uint16_t SETbr(uint8_t bit, HalfRegister reg);
@@ -134,16 +136,21 @@ private:
     uint16_t RESbr(uint8_t bit, HalfRegister reg);
     uint16_t RESbnn(uint8_t bit, uint16_t address);
 
+    // Enable/disable interrupts
     uint16_t EI();
     uint16_t DI();
 
     // Rotate - old carry flag rotated in, carry flag set to rotated out value 
     uint16_t RLr(HalfRegister& reg);
     uint16_t RRr(HalfRegister& reg);
+    uint16_t RLHL();
+    uint16_t RRHL();
 
     // Rotate circular - a cyclic permutation, carry flag set as before
     uint16_t RLCr(HalfRegister& reg);
     uint16_t RRCr(HalfRegister& reg);
+    uint16_t RLCHL();
+    uint16_t RRCHL();
 
     // Special rotations
     uint16_t RLCA();
@@ -151,21 +158,29 @@ private:
     uint16_t RRCA();
     uint16_t RRA();
 
+    // Shift/swap operations
+    uint16_t SLAr(HalfRegister& reg);
+    uint16_t SLAHL();
+    uint16_t SRAr(HalfRegister& reg);
+    uint16_t SRAHL();
+    uint16_t SRLr(HalfRegister& reg);
+    uint16_t SRLHL();
     uint16_t SWAPr(HalfRegister& reg);
     uint16_t SWAPHL();
 
+    // Jump operations
     uint16_t JPnn(uint16_t address);
     uint16_t JPu16();
     uint16_t JPccu16(uint8_t condition, bool positiveCondition);
     uint16_t JRe();
     uint16_t JRcce(uint8_t condition, bool positiveCondition);
 
-    uint16_t CALLnn();
-
+    // Control flow
+    uint16_t CALLu16();
+    uint16_t CALLccu16(uint8_t condition, bool positiveCondition);
     uint16_t RET();
     uint16_t RETcc(uint8_t condition, bool positiveCondition);
     uint16_t RETI();
-
     uint16_t RST(uint8_t address);
 
     // Utility functions

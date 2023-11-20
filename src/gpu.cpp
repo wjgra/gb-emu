@@ -27,7 +27,7 @@ void GPU::initialiseRenderer(SDL_Window* win){
 
 void GPU::update(uint16_t cycles){
 
-    // DMA??
+    // DMA clock update
 
     if (LCDEnabled())
     {
@@ -81,6 +81,8 @@ void GPU::update(uint16_t cycles){
                     throw std::runtime_error("Invalid GPU mode");
             }
         }
+
+        // Update LY/LYCompare flag + interrupt
     }
 }
 
@@ -202,6 +204,14 @@ void GPU::fillPalette(std::array<uint32_t, 4>& pal, uint16_t data){
         }
 }  
 
+uint8_t GPU::getPaletteIndex(uint16_t tileDataAddress, uint8_t bit) const{
+    HalfRegister b1 = memoryMap.readByte(tileDataAddress);
+    HalfRegister b2 = memoryMap.readByte(tileDataAddress + 1);
+    HalfRegister pLow = b1.testBit(bit) ? 0x01 : 0x00;
+    HalfRegister pHigh = b2.testBit(bit) ? 0x02 : 0x00;
+    return pLow + pHigh;
+}
+
 void GPU::drawBgScanline(){
     if(!bgEnabled()){
         // Draw all white pixels if bg disabled
@@ -214,14 +224,12 @@ void GPU::drawBgScanline(){
         uint16_t const tileMapAddress = bgTileMapArea() ? 0x9C00 : 0x9800;
         uint16_t const tileMapDataAddress = bgWindowTileDataArea() ? 0x8000 : 0x9000;
         // Get tile y tile index and y pos within tile (same for all tiles in scanline)
+        // Unlike the window, the bg has a wrapping tilemap, so index is modulo tileMapWidth
         uint8_t const tileYIndex = ((getCurrentLine() + getScrollY()) / tileWidthInPixels) % tileMapWidth;
         uint8_t const tileYPos = (getCurrentLine() + getScrollY()) % tileWidthInPixels;
         // Load colour palette
         std::array<uint32_t, 4> palette;
         fillPalette(palette, getBgPalette());
-/*         for (int i = 0 ; i < 4 ; ++i){
-            palette[i] = colours[(getBgPalette() >> (2 * i)) & 0b11];
-        } */
         // Draw each pixel in the scanline
         auto it = bgBuffer.begin() + winWidth * getCurrentLine();
         for (int x = 0 ; x < winWidth ; ++x, ++it){
@@ -238,20 +246,62 @@ void GPU::drawBgScanline(){
                 tileDataAddress += static_cast<int8_t>(tileIndex) * tileSizeInBytes;
             }
             tileDataAddress += uint16_t(tileYPos * 2);
-            HalfRegister b1 = memoryMap.readByte(tileDataAddress);
+            uint8_t bit = 7 - ((getScrollX() + x) % 8);
+            /* HalfRegister b1 = memoryMap.readByte(tileDataAddress);
             HalfRegister b2 = memoryMap.readByte(tileDataAddress + 1);
 
             HalfRegister bit = 7 - ((getScrollX() + x) % 8);
             HalfRegister pLow = b1.testBit(bit) ? 0x01 : 0x00;
             HalfRegister pHigh = b2.testBit(bit) ? 0x02 : 0x00;
 
-            *it = palette[pLow + pHigh];
+            *it = palette[pLow + pHigh]; */
+           *it = palette[getPaletteIndex(tileDataAddress, bit)];
         }
     }
 }
 
 void GPU::drawWindowScanline(){
+    // If scanline is above window, no drawing required (y=0 is top of screen)
+    int8_t const winYPos = getCurrentLine() - getWinY();
+    if (winYPos < 0) return;
+    int8_t const winXPos = getWinXPlusSeven() - 7;
+    // Set addresses for the starts of the tile map and tile map data area respectively
+    uint16_t const tileMapAddress = windowTileMapArea() ? 0x9C00 : 0x9800;
+    uint16_t const tileMapDataAddress = bgWindowTileDataArea() ? 0x8000 : 0x9000;
+    // Get tile y tile index and y pos within tile (same for all tiles in scanline)
+    uint8_t const tileYIndex = winYPos / tileWidthInPixels;
+    uint8_t const tileYPos = winYPos % tileWidthInPixels;
+    // Load colour palette
+    std::array<uint32_t, 4> palette;
+    fillPalette(palette, getBgPalette());
+    // Draw each window pixel in the scanline
+    auto it = bgBuffer.begin() + winWidth * getCurrentLine();
+    for (int x = 0 ; x < winWidth ; ++x, ++it){
+        if (x < winXPos) continue;
+        uint8_t const tileXIndex = ((x - winXPos) / tileWidthInPixels);
+        uint8_t const tileIndex = memoryMap.readByte(tileMapAddress + tileMapWidth * tileYIndex + tileXIndex);
 
+        uint16_t tileDataAddress = tileMapDataAddress;
+        if(bgWindowTileDataArea()){
+            // Unsigned tile index (starting from 0x8000)
+            tileDataAddress += tileIndex * tileSizeInBytes;
+        }
+        else{
+            // Signed tile index (centred on 0x9000)
+            tileDataAddress += static_cast<int8_t>(tileIndex) * tileSizeInBytes;
+        }
+        tileDataAddress += uint16_t(tileYPos * 2);
+        /* HalfRegister b1 = memoryMap.readByte(tileDataAddress);
+        HalfRegister b2 = memoryMap.readByte(tileDataAddress + 1); */
+
+        HalfRegister bit = 7 - (x % 8);
+        /* HalfRegister pLow = b1.testBit(bit) ? 0x01 : 0x00;
+        HalfRegister pHigh = b2.testBit(bit) ? 0x02 : 0x00;
+
+        *it = palette[pLow + pHigh]; */
+
+        *it = palette[getPaletteIndex(tileDataAddress, bit)];
+    }
 }
 
 void GPU::drawObjScanline(){
@@ -295,3 +345,15 @@ uint8_t GPU::incrementCurrentLine(){
 uint8_t GPU::getBgPalette() const{
     return memoryMap.readByte(LCDControlRegAddress + 7);
 }
+
+
+// ...
+
+uint8_t GPU::getWinY() const{
+    return memoryMap.readByte(LCDControlRegAddress + 0xA);
+}
+
+uint8_t GPU::getWinXPlusSeven() const{
+    return memoryMap.readByte(LCDControlRegAddress + 0xB);
+}
+

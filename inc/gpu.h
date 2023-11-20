@@ -48,7 +48,11 @@ private:
 
     uint8_t getBgPalette() const;
 
+    uint8_t getWinY() const;
+    uint8_t getWinXPlusSeven() const;
+
     void static fillPalette(std::array<uint32_t, 4>& pal, uint16_t address);
+    uint8_t getPaletteIndex(uint16_t tileDataAddress, uint8_t bit) const;
     // getters for scroll x,y ; win x, y
 
     uint16_t const cyclesPerLine = 456;
@@ -62,6 +66,8 @@ private:
     uint8_t const tileWidthInPixels = 8;
     uint8_t const tileSizeInBytes = 16;
     uint8_t const tileMapWidth = 32;
+
+    uint8_t const objSizeInBytes = 16;
 
     uint8_t const winWidth = 160;
     uint8_t const winHeight = 144;

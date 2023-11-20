@@ -282,7 +282,6 @@ void CPU::initOpcodeInfo(){
 
 
 
-
     opcodeInfo[0x90] = "SUB A, B";
     opcodeInfo[0x91] = "SUB A, C";
     opcodeInfo[0x92] = "SUB A, D";
@@ -335,15 +334,15 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xC1] = "POP stack to BC";
     opcodeInfo[0xC2] = "JP NZ, u16";
     opcodeInfo[0xC3] = "JP u16";
-
+    opcodeInfo[0xC4] = "CALL NZ, u16";
     opcodeInfo[0xC5] = "PUSH BC to stack";
     opcodeInfo[0xC6] = "ADD A, u8";
     opcodeInfo[0xC7] = "RST 0x00";
     opcodeInfo[0xC8] = "RET Z";
     opcodeInfo[0xC9] = "RET";
-    opcodeInfo[0xC3] = "JP Z, u16";
+    opcodeInfo[0xCA] = "JP Z, u16";
     opcodeInfo[0xCB] = "CB-prefixed opcode! See next line";
-
+    opcodeInfo[0xCC] = "CALL Z, u16";
     opcodeInfo[0xCD] = "CALL (PC)";
 
     opcodeInfo[0xCF] = "RST 0x08";
@@ -351,7 +350,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xD1] = "POP stack to DE";
     opcodeInfo[0xD2] = "JP NC, u16";
     // No 0xD3 opcode
-
+    opcodeInfo[0xD4] = "CALL NC, u16";
     opcodeInfo[0xD5] = "PUSH DE to stack";
     opcodeInfo[0xD6] = "SUB A, (PC)";
     opcodeInfo[0xD7] = "RST 0x10";
@@ -359,11 +358,11 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xD9] = "RETI";
     opcodeInfo[0xDA] = "JP C, u16";
     // No 0xDB opcode
-
+    opcodeInfo[0xDC] = "CALL C, u16";
     // No 0xDD opcode
 
     opcodeInfo[0xDF] = "RST 0x18";
-    opcodeInfo[0xE0] = "LD (0xFF00+u8) from A"; ///////////////////
+    opcodeInfo[0xE0] = "LD (0xFF00+u8) from A";
     opcodeInfo[0xE1] = "POP stack to HL";
     opcodeInfo[0xE2] = "LD (0xFF00+C) from A";
     // No 0xE3 opcode
@@ -385,8 +384,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xF3] = "Disable interrupts";
     // No 0xF4 opcode
     opcodeInfo[0xF5] = "PUSH AF to stack";
-    opcodeInfo[0xF5] = "OR A, u8";
-
+    opcodeInfo[0xF6] = "OR A, u8";
     opcodeInfo[0xF7] = "RST 0x30";
     // opcodeInfo[0xF8] = "LD ????;
     opcodeInfo[0xF9] = "LD SP from HL";
@@ -430,7 +428,22 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x1D] = "RR L";
     opcodeCBInfo[0x1E] = "RR (HL)";
     opcodeCBInfo[0x1F] = "RR A";
-
+    opcodeCBInfo[0x20] = "SLA B";
+    opcodeCBInfo[0x21] = "SLA C";
+    opcodeCBInfo[0x22] = "SLA D";
+    opcodeCBInfo[0x23] = "SLA E";
+    opcodeCBInfo[0x24] = "SLA H";
+    opcodeCBInfo[0x25] = "SLA L";
+    opcodeCBInfo[0x26] = "SLA (HL)";
+    opcodeCBInfo[0x27] = "SLA A";
+    opcodeCBInfo[0x28] = "SRA B";
+    opcodeCBInfo[0x29] = "SRA C";
+    opcodeCBInfo[0x2A] = "SRA D";
+    opcodeCBInfo[0x2B] = "SRA E";
+    opcodeCBInfo[0x2C] = "SRA H";
+    opcodeCBInfo[0x2D] = "SRA L";
+    opcodeCBInfo[0x2E] = "SRA (HL)";
+    opcodeCBInfo[0x2F] = "SRA A";
     opcodeCBInfo[0x30] = "SWAP B";
     opcodeCBInfo[0x31] = "SWAP C";
     opcodeCBInfo[0x32] = "SWAP D";
@@ -439,7 +452,14 @@ void CPU::initOpcodeInfo(){
     opcodeCBInfo[0x35] = "SWAP L";
     opcodeCBInfo[0x36] = "SWAP HL";
     opcodeCBInfo[0x37] = "SWAP A";
-
+    opcodeCBInfo[0x38] = "SRL B";
+    opcodeCBInfo[0x39] = "SRL C";
+    opcodeCBInfo[0x3A] = "SRL D";
+    opcodeCBInfo[0x3B] = "SRL E";
+    opcodeCBInfo[0x3C] = "SRL H";
+    opcodeCBInfo[0x3D] = "SRL L";
+    opcodeCBInfo[0x3E] = "SRL (HL)";
+    opcodeCBInfo[0x3F] = "SRL A";
     opcodeCBInfo[0x40] = "BIT 0, B";
     opcodeCBInfo[0x41] = "BIT 0, C";
     opcodeCBInfo[0x42] = "BIT 0, D";
@@ -678,6 +698,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x0D: return DECr(C);
     case 0x0E: return LDru8(C);
     case 0x0F: return RRCA();
+
     case 0x11: return LDrru16(DE);
     case 0x12: return LDnnr(DE, A);
     case 0x13: return INCrr(DE);
@@ -848,7 +869,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xC1: return POPrr(BC);
     case 0xC2: return JPccu16(FLAG_ZERO, false);
     case 0xC3: return JPu16();
-
+    case 0xC4: return CALLccu16(FLAG_ZERO, false);
     case 0xC5: return PUSHrr(BC);
     case 0xC6: return ADDru8(A);
     case 0xC7: return RST(0x00);
@@ -856,34 +877,40 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xC9: return RET();
     case 0xCA: return JPccu16(FLAG_ZERO, true);
     case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
-
-    case 0xCD: return CALLnn();
+    case 0xCC: return CALLccu16(FLAG_ZERO, true);
+    case 0xCD: return CALLu16();
 
     case 0xCF: return RST(0x08);
     case 0xD0: return RETcc(FLAG_CARRY, false);
     case 0xD1: return POPrr(DE);
 
     case 0xD3: return JPccu16(FLAG_CARRY, false);
-
+    case 0xD4: return CALLccu16(FLAG_CARRY, false);
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
     case 0xD7: return RST(0x10);
     case 0xD8: return RETcc(FLAG_CARRY, true);
     case 0xD9: return RETI();
     case 0xDA: return JPccu16(FLAG_CARRY, true);
-
+    // No 0xDB opcode
+    case 0xDC: return CALLccu16(FLAG_CARRY, true);
+    // No 0xDD opcode
 
     case 0xDF: return RST(0x18);
     case 0xE0: return LDFFu8r(A);
     case 0xE1: return POPrr(HL);
     case 0xE2: return LDnnr(0xFF00 + C, A);
-
+    // No 0xE3 opcode
+    // No 0xE4 opcode
     case 0xE5: return PUSHrr(HL);
     case 0xE6: return ANDAu8();
     case 0xE7: return RST(0x20);
     // case 0xE8: ADD SP, i8 ???
     case 0xE9: return JPnn(HL);
     case 0xEA: return LDu16r(A);
+    // No 0xEB opcode
+    // No 0xEC opcode
+    // No 0xED opcode
 
 
     case 0xEE: return XORAu8();
@@ -892,6 +919,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xF1: return POPrr(AF);
     case 0xF2: return LDrnn(A, 0xFF00 + C);
     case 0xF3: return DI();
+    // No 0xF4 opcode
     case 0xF5: return PUSHrr(AF);
     case 0xF6: return ORAu8();
     case 0xF7: return RST(0x30);
@@ -899,7 +927,8 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xF9: return LDrrrr(SP, HL);
     case 0xFA: return LDru16(A);
     case 0xFB: return EI();
-
+    // No 0xFC opcode
+    // No 0xFD opcode
     case 0xFE: return CPru8(A);
     case 0xFF: return RST(0x38);
     default:     
@@ -913,14 +942,13 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
 uint16_t CPU::executeCBOpcode(uint8_t opcode){
     addOpcodeToLog(opcode);
     switch(opcode){
-        // RLC/RRC
     case 0x00: return RLCr(B);
     case 0x01: return RLCr(C);
     case 0x02: return RLCr(D);
     case 0x03: return RLCr(B);
     case 0x04: return RLCr(H);
     case 0x05: return RLCr(L);
-    // case 0x06: return RLCr((HL));
+    case 0x06: return RLCHL();
     case 0x07: return RLCr(A);
     case 0x08: return RRCr(B);
     case 0x09: return RRCr(C);
@@ -928,16 +956,15 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x0B: return RRCr(B);
     case 0x0C: return RRCr(H);
     case 0x0D: return RRCr(L);
-    // case 0x0E: return RRCr((HL));
+    case 0x0E: return RRCHL();
     case 0x0F: return RRCr(A);
-    // RL/RR
     case 0x10: return RLr(B);
     case 0x11: return RLr(C);
     case 0x12: return RLr(D);
     case 0x13: return RLr(B);
     case 0x14: return RLr(H);
     case 0x15: return RLr(L);
-    // case 0x16: return RLr((HL));
+    case 0x16: return RLHL();
     case 0x17: return RLr(A);
     case 0x18: return RRr(B);
     case 0x19: return RRr(C);
@@ -945,10 +972,24 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x1B: return RRr(B);
     case 0x1C: return RRr(H);
     case 0x1D: return RRr(L);
-    // case 0x1E: return RRr((HL));
+    case 0x1E: return RRHL();
     case 0x1F: return RRr(A);
-
-
+    case 0x20: return SLAr(B);
+    case 0x21: return SLAr(C);
+    case 0x22: return SLAr(D);
+    case 0x23: return SLAr(E);
+    case 0x24: return SLAr(H);
+    case 0x25: return SLAr(L);
+    case 0x26: return SLAHL();
+    case 0x27: return SLAr(A);
+    case 0x28: return SRAr(B);
+    case 0x29: return SRAr(C);
+    case 0x2A: return SRAr(D);
+    case 0x2B: return SRAr(E);
+    case 0x2C: return SRAr(H);
+    case 0x2D: return SRAr(L);
+    case 0x2E: return SRAHL();
+    case 0x2F: return SRAr(A);
     case 0x30: return SWAPr(B);
     case 0x31: return SWAPr(C);
     case 0x32: return SWAPr(D);
@@ -957,7 +998,14 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x35: return SWAPr(L);
     case 0x36: return SWAPHL();
     case 0x37: return SWAPr(A);
-
+    case 0x38: return SRLr(B);
+    case 0x39: return SRLr(C);
+    case 0x3A: return SRLr(D);
+    case 0x3B: return SRLr(E);
+    case 0x3C: return SRLr(H);
+    case 0x3D: return SRLr(L);
+    case 0x3E: return SRLHL();
+    case 0x3F: return SRLr(A);
     case 0x40: return BITbr(0, B);
     case 0x41: return BITbr(0, C);
     case 0x42: return BITbr(0, D);
@@ -1512,6 +1560,20 @@ uint16_t CPU::RRr(HalfRegister& reg){
     return 8;
 }
 
+uint16_t CPU::RLHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    RLr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
+
+uint16_t CPU::RRHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    RRr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
+
 uint16_t CPU::RLCr(HalfRegister& reg){
     bool newCarryState = reg.testBit(7);
     setFlag(FLAG_CARRY, newCarryState);
@@ -1534,6 +1596,19 @@ uint16_t CPU::RRCr(HalfRegister& reg){
     return 8;
 }
 
+uint16_t CPU::RLCHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    RLCr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
+
+uint16_t CPU::RRCHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    RRCr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
 
 uint16_t CPU::RLCA(){
     RLCr(A);
@@ -1557,6 +1632,57 @@ uint16_t CPU::RRA(){
     RRr(A);
     clearFlag(FLAG_ZERO);
     return 4;
+}
+
+uint16_t CPU::SLAr(HalfRegister& reg){
+    setFlag(FLAG_CARRY, reg.testBit(7));
+    reg = reg << 1;
+    setFlag(FLAG_ZERO, reg == 0x00);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 8;
+}
+
+uint16_t CPU::SLAHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    SLAr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+}
+
+uint16_t CPU::SRAr(HalfRegister& reg){
+    setFlag(FLAG_CARRY, reg.testBit(0));
+    bool bit7 = reg.testBit(7);
+    reg = reg >> 1;
+    reg.setBit(7, bit7);
+    setFlag(FLAG_ZERO, reg == 0x00);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 8;
+}
+
+uint16_t CPU::SRAHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    SRAr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
+    return 16;
+}
+
+uint16_t CPU::SRLr(HalfRegister& reg){
+    setFlag(FLAG_CARRY, reg.testBit(0));
+    reg = reg >> 1;
+    setFlag(FLAG_ZERO, reg == 0x00);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 8;
+}
+
+uint16_t CPU::SRLHL(){
+    HalfRegister tempReg = memoryMap.readByte(HL);
+    SRLr(tempReg);
+    memoryMap.writeByte(HL, tempReg);
+    return 16;
 }
 
 uint16_t CPU::SWAPr(HalfRegister& reg){
@@ -1613,12 +1739,22 @@ uint16_t CPU::JRcce(uint8_t condition, bool positiveCondition){
     }
 }
 
-uint16_t CPU::CALLnn(){
+uint16_t CPU::CALLu16(){
     uint16_t nn = readWordAtPC();
     SP -= 2;
     memoryMap.writeWord(SP, PC);
     PC = nn;
     return 24;
+}
+
+uint16_t CPU::CALLccu16(uint8_t condition, bool positiveCondition){
+    bool res = condition & F;
+    if (res == positiveCondition){
+        return CALLu16();
+    }
+    else{
+        return 12;
+    }  
 }
 
 uint16_t CPU::RET(){
