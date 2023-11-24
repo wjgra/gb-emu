@@ -26,7 +26,7 @@ uint8_t MemoryMap::readByte(uint16_t address) const{
 }
 
 uint16_t MemoryMap::readWord(uint16_t address) const{
-    return  (readByte(address + 1) << 8) + readByte(address);
+    return  (readByte(address + 1) << 8) | readByte(address);
 }
 
 void MemoryMap::writeByte(uint16_t address, uint8_t value){

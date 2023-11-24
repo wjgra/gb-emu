@@ -6,7 +6,7 @@ uint16_t constexpr static LOWER_BYTEMASK = 0x00FF;
 uint8_t constexpr static FLAG_ZERO = 0x80;
 uint8_t constexpr static FLAG_SUBTRACT = 0x40;
 uint8_t constexpr static FLAG_HALFCARRY = 0x20;
-uint8_t constexpr static FLAG_CARRY = 0x19;
+uint8_t constexpr static FLAG_CARRY = 0x10;
 
 HalfRegister::HalfRegister() : byte{}{
 }
@@ -154,7 +154,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x0D] = "DEC C";
     opcodeInfo[0x0E] = "LD C from (PC)";
     opcodeInfo[0x0F] = "RRCA";
-
+    opcodeInfo[0x10] = "STOP";
     opcodeInfo[0x11] = "LD DE from (PC)";
     opcodeInfo[0x12] = "LD (DE) from A";
     opcodeInfo[0x13] = "INC DE";
@@ -274,14 +274,14 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x85] = "ADD A, L";
     opcodeInfo[0x86] = "ADD A, (HL)";
     opcodeInfo[0x87] = "ADD A, A";
-
-
-
-
-
-
-
-
+    opcodeInfo[0x88] = "ADC A, B";
+    opcodeInfo[0x89] = "ADC A, C";
+    opcodeInfo[0x8A] = "ADC A, D";
+    opcodeInfo[0x8B] = "ADC A, E";
+    opcodeInfo[0x8C] = "ADC A, H";
+    opcodeInfo[0x8D] = "ADC A, L";
+    opcodeInfo[0x8E] = "ADC A, (HL)";
+    opcodeInfo[0x8F] = "ADC A, A";
     opcodeInfo[0x90] = "SUB A, B";
     opcodeInfo[0x91] = "SUB A, C";
     opcodeInfo[0x92] = "SUB A, D";
@@ -290,14 +290,14 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x95] = "SUB A, L";
     opcodeInfo[0x96] = "SUB A, (HL)";
     opcodeInfo[0x97] = "SUB A, A";
-
-
-
-
-
-
-
-
+    opcodeInfo[0x98] = "SBC A, B";
+    opcodeInfo[0x99] = "SBC A, C";
+    opcodeInfo[0x9A] = "SBC A, D";
+    opcodeInfo[0x9B] = "SBC A, E";
+    opcodeInfo[0x9C] = "SBC A, H";
+    opcodeInfo[0x9D] = "SBC A, L";
+    opcodeInfo[0x9E] = "SBC A, (HL)";
+    opcodeInfo[0x9F] = "SBC A, A";
     opcodeInfo[0xA0] = "AND A, B";
     opcodeInfo[0xA1] = "AND A, C";
     opcodeInfo[0xA2] = "AND A, D";
@@ -344,7 +344,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xCB] = "CB-prefixed opcode! See next line";
     opcodeInfo[0xCC] = "CALL Z, u16";
     opcodeInfo[0xCD] = "CALL (PC)";
-
+    opcodeInfo[0xCE] = "ADC A, u8";
     opcodeInfo[0xCF] = "RST 0x08";
     opcodeInfo[0xD0] = "RET NC";
     opcodeInfo[0xD1] = "POP stack to DE";
@@ -360,7 +360,7 @@ void CPU::initOpcodeInfo(){
     // No 0xDB opcode
     opcodeInfo[0xDC] = "CALL C, u16";
     // No 0xDD opcode
-
+    opcodeInfo[0xDE] = "SBC A, u8";
     opcodeInfo[0xDF] = "RST 0x18";
     opcodeInfo[0xE0] = "LD (0xFF00+u8) from A";
     opcodeInfo[0xE1] = "POP stack to HL";
@@ -370,7 +370,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xE5] = "PUSH HL to stack";
     opcodeInfo[0xE6] = "AND A, u8";
     opcodeInfo[0xE7] = "RST 0x20";
-    // opcodeInfo[0xE8] = "ADD SP, i8";
+    opcodeInfo[0xE8] = "ADD SP, i8";
     opcodeInfo[0xE9] = "JP HL";
     opcodeInfo[0xEA] = "LD (u16) from A";
     // No 0xEB opcode
@@ -386,7 +386,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0xF5] = "PUSH AF to stack";
     opcodeInfo[0xF6] = "OR A, u8";
     opcodeInfo[0xF7] = "RST 0x30";
-    // opcodeInfo[0xF8] = "LD ????;
+    opcodeInfo[0xF8] = "LD HL from SP+i8";
     opcodeInfo[0xF9] = "LD SP from HL";
     opcodeInfo[0xFA] = "LD A from (u16)";
     opcodeInfo[0xFB] = "Enable interrupts";
@@ -698,7 +698,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x0D: return DECr(C);
     case 0x0E: return LDru8(C);
     case 0x0F: return RRCA();
-
+    case 0x10: return STOP();
     case 0x11: return LDrru16(DE);
     case 0x12: return LDnnr(DE, A);
     case 0x13: return INCrr(DE);
@@ -818,11 +818,14 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x85: return ADDrr(A, L);
     case 0x86: return ADDrnn(A, HL);
     case 0x87: return ADDrr(A, A);
-
-
-
-
-
+    case 0x88: return ADCAr(B);
+    case 0x89: return ADCAr(C);
+    case 0x8A: return ADCAr(D);
+    case 0x8B: return ADCAr(E);
+    case 0x8C: return ADCAr(H);
+    case 0x8D: return ADCAr(L);
+    case 0x8E: return ADCAHL();
+    case 0x8F: return ADCAr(A); 
     case 0x90: return SUBrr(A, B);
     case 0x91: return SUBrr(A, C);
     case 0x92: return SUBrr(A, D);
@@ -831,8 +834,14 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x95: return SUBrr(A, L);
     case 0x96: return SUBrnn(A, HL);
     case 0x97: return SUBrr(A, A); 
-
-
+    case 0x98: return SBCAr(B);
+    case 0x99: return SBCAr(C);
+    case 0x9A: return SBCAr(D);
+    case 0x9B: return SBCAr(E);
+    case 0x9C: return SBCAr(H);
+    case 0x9D: return SBCAr(L);
+    case 0x9E: return SBCAHL();
+    case 0x9F: return SBCAr(A); 
     case 0xA0: return ANDAr(B);
     case 0xA1: return ANDAr(C);
     case 0xA2: return ANDAr(D);
@@ -879,12 +888,12 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xCB: return executeCBOpcode(memoryMap.readByte(PC++));
     case 0xCC: return CALLccu16(FLAG_ZERO, true);
     case 0xCD: return CALLu16();
-
+    case 0xCE: return ADCAu8();
     case 0xCF: return RST(0x08);
     case 0xD0: return RETcc(FLAG_CARRY, false);
     case 0xD1: return POPrr(DE);
-
-    case 0xD3: return JPccu16(FLAG_CARRY, false);
+    case 0xD2: return JPccu16(FLAG_CARRY, false);
+    // No 0xD3 opcode
     case 0xD4: return CALLccu16(FLAG_CARRY, false);
     case 0xD5: return PUSHrr(DE);
     case 0xD6: return SUBru8(A);
@@ -895,7 +904,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     // No 0xDB opcode
     case 0xDC: return CALLccu16(FLAG_CARRY, true);
     // No 0xDD opcode
-
+    case 0xDE: return SBCAu8();
     case 0xDF: return RST(0x18);
     case 0xE0: return LDFFu8r(A);
     case 0xE1: return POPrr(HL);
@@ -905,7 +914,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xE5: return PUSHrr(HL);
     case 0xE6: return ANDAu8();
     case 0xE7: return RST(0x20);
-    // case 0xE8: ADD SP, i8 ???
+    case 0xE8: return ADDSPi8();
     case 0xE9: return JPnn(HL);
     case 0xEA: return LDu16r(A);
     // No 0xEB opcode
@@ -916,14 +925,14 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xEE: return XORAu8();
     case 0xEF: return RST(0x28);
     case 0xF0: return LDrFFu8(A);
-    case 0xF1: return POPrr(AF);
+    case 0xF1: return POPAF();
     case 0xF2: return LDrnn(A, 0xFF00 + C);
     case 0xF3: return DI();
     // No 0xF4 opcode
-    case 0xF5: return PUSHrr(AF);
+    case 0xF5: return PUSHAF();
     case 0xF6: return ORAu8();
     case 0xF7: return RST(0x30);
-    // case 0xF8????
+    case 0xF8: return LDHLSPe();
     case 0xF9: return LDrrrr(SP, HL);
     case 0xFA: return LDru16(A);
     case 0xFB: return EI();
@@ -1211,6 +1220,11 @@ uint16_t CPU::NOP(){
     return 4; // add const??
 }
 
+uint16_t CPU::STOP(){
+    // TBC
+    return 4;
+}
+
 // LDrru16 (0xN1, N = 0, 1, 2, 3)
 // Loads word at (PC) to given register
 uint16_t CPU::LDrru16(Register& targetReg){
@@ -1271,17 +1285,39 @@ uint16_t CPU::LDru16(HalfRegister& targetReg){
     return 16;
 }
 
+uint16_t CPU::LDHLSPe(){
+    int8_t eOffset = static_cast<int8_t>(readByteAtPC());
+    clearFlag(FLAG_ZERO);
+    clearFlag(FLAG_SUBTRACT);
+    // Calculate C and HC flags as for ADDrrrr
+    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (eOffset & 0xFFFF)) & 0x10000);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (eOffset & 0xFFF)) & 0x1000);
+    HL = SP + eOffset;  
+    return 12;
+}
+
 // Pops top value of the stack to targetReg
-// Flags altered iff targetReg is AF 
 uint16_t CPU::POPrr(Register& targetReg){
     targetReg = memoryMap.readWord(SP);
     SP += 2;
     return 12;
 }
 
+uint16_t CPU::POPAF(){
+    POPrr(AF);
+    F &= 0xF0; // Non-flag bits in F must remain zero
+    return 12;
+}
+
 uint16_t CPU::PUSHrr(Register& dataReg){
     SP -= 2;
     memoryMap.writeWord(SP, dataReg);
+    return 16;
+}
+
+uint16_t CPU::PUSHAF(){
+    SP -= 2;
+    memoryMap.writeWord(SP, uint16_t(AF) & 0xFFF0);
     return 16;
 }
 
@@ -1413,7 +1449,7 @@ uint16_t CPU::DECnn(uint16_t targetAddress){
     return 12;
 }
 
-uint16_t CPU::ADDrrrr(Register& x, Register& y){
+uint16_t CPU::ADDrrrr(Register& x, Register y){
     setFlag(FLAG_CARRY, ((x & 0xFFFF) + (y & 0xFFFF)) & 0x10000);
     setFlag(FLAG_HALFCARRY, ((x & 0xFFF) + (y & 0xFFF)) & 0x1000);
     clearFlag(FLAG_SUBTRACT);
@@ -1421,7 +1457,7 @@ uint16_t CPU::ADDrrrr(Register& x, Register& y){
     return 8;
 }
 
-uint16_t CPU::ADDrr(HalfRegister& x, HalfRegister& y){
+uint16_t CPU::ADDrr(HalfRegister& x, HalfRegister y){
     setFlag(FLAG_CARRY, ((x & 0xFF) + (y & 0xFF)) & 0x100);
     setFlag(FLAG_HALFCARRY, ((x & 0xF) + (y & 0xF)) & 0x10);
     x += y;
@@ -1442,7 +1478,16 @@ uint16_t CPU::ADDru8(HalfRegister& reg){
     return 8;
 }
 
-// Add SP i8???
+uint16_t CPU::ADDSPi8(){
+    int8_t eOffset = static_cast<int8_t>(readByteAtPC());
+    clearFlag(FLAG_ZERO);
+    clearFlag(FLAG_SUBTRACT);
+    // Calculate C and HC flags as for ADDrrrr
+    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (eOffset & 0xFFFF)) & 0x10000);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (eOffset & 0xFFF)) & 0x1000);
+    SP += eOffset;      
+    return 16;
+}
 
 uint16_t CPU::SUBrr(HalfRegister& x, HalfRegister& y){
     setFlag(FLAG_CARRY, ((x & 0xFF) - (y & 0xFF)) & 0x100);
@@ -1465,9 +1510,50 @@ uint16_t CPU::SUBru8(HalfRegister& reg){
     return 8;
 }
 
+uint16_t CPU::ADCAr(HalfRegister reg){
+    // uint8_t Aprev = A;
+    uint8_t addValue = reg + isFlagSet(FLAG_CARRY);
+    ADDrr(A, addValue); // what if addValue becomes zero ???
+    return 4;
+}
+
+uint16_t CPU::ADCAHL(){
+    ADCAr(memoryMap.readByte(HL));
+    return 8;
+}
+
+uint16_t CPU::ADCAu8(){
+    ADCAr(readByteAtPC());
+    return 8;
+}
+
+uint16_t CPU::SBCAr(HalfRegister reg){
+    uint8_t Aprev = A;
+    uint8_t subValue = reg + isFlagSet(FLAG_CARRY);// what if subValue becomes zero ???
+    A -= subValue;
+    setFlag(FLAG_ZERO, A == 0);
+    setFlag(FLAG_SUBTRACT);
+    // ?? Same as for SUB? Can I just use SUBrr(A, subValue)
+    setFlag(FLAG_CARRY, ((Aprev & 0xFF) - (subValue & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((Aprev & 0xF) - (subValue & 0xF)) & 0x10);
+    return 4;
+}
+
+uint16_t CPU::SBCAHL(){
+    SBCAr(memoryMap.readByte(HL));
+    return 8;
+}
+
+uint16_t CPU::SBCAu8(){
+    SBCAr(readByteAtPC());
+    return 8;
+}
+
 uint16_t CPU::CPrr(HalfRegister& x, HalfRegister& y){
-    setFlag(FLAG_CARRY, ((x & 0xFF) - (y & 0xFF)) & 0x100);
-    setFlag(FLAG_HALFCARRY, ((x & 0xF) - (y & 0xF)) & 0x10);
+    /* setFlag(FLAG_CARRY, ((x & 0xFF) - (y & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((x & 0xF) - (y & 0xF)) & 0x10); */
+    setFlag(FLAG_CARRY, (x & 0xFF) < (y & 0xFF));
+    setFlag(FLAG_HALFCARRY, (x & 0xF) < (y & 0xF));
     setFlag(FLAG_ZERO, x - y == 0);
     setFlag(FLAG_SUBTRACT);
     return 4;

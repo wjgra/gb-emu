@@ -15,7 +15,7 @@ bool GBEmulator::start(){
         throw std::runtime_error("Failed to load boot program");
     }
     std::cout << "Loaded boot program\n";
-    if (!memoryMap.loadCartridge(".//input//cpu_instrs.gb")){
+    if (!memoryMap.loadCartridge(".//input//01-special.gb")){
         throw std::runtime_error("Failed to load cartridge");
     }
     std::cout << "Loaded cartridge\n";
@@ -57,6 +57,12 @@ void GBEmulator::frame(){
         handleEvents(event);
     }
     tStart = tNow;
+
+    if (memoryMap.readByte(0xFF02) == 0x81){
+        char c = memoryMap.readByte(0xFF01);
+        printf("%c", c);
+        memoryMap.writeByte(0xFF02, 0x00);
+    }
 }
 
 void GBEmulator::handleEvents(SDL_Event const&  event){

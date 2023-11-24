@@ -76,7 +76,17 @@ private:
     uint8_t readByteAtPC();
 
     // Instruction set - return type is #(cycles to execute opcode)
+    // Key for mnemonics
+    // ...
+    // ...
+    // ?? how to indicate address consistently w/o () ??
+
+    // To do: re-order opcode fn defs to match declaration
+    //        transform unneeded (nn) opcodes to (HL), and r to A
+    //        remove any cout statements?
+
     uint16_t NOP();
+    uint16_t STOP(); // Unimplemented
 
     // Load operations
     uint16_t LDrru16(Register& targetReg);
@@ -90,10 +100,13 @@ private:
     uint16_t LDrFFu8(HalfRegister& targetReg);
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
+    uint16_t LDHLSPe();
 
     // Stack operations
     uint16_t POPrr(Register& targetReg);
+    uint16_t POPAF();
     uint16_t PUSHrr(Register& dataReg);
+    uint16_t PUSHAF();
 
     // Logical operations
     uint16_t XORAr(HalfRegister reg);
@@ -113,14 +126,22 @@ private:
     uint16_t DECrr(Register& reg);
     uint16_t DECr(HalfRegister& reg);
     uint16_t DECnn(uint16_t targetAddress);
-    uint16_t ADDrrrr(Register& x, Register& y);
-    uint16_t ADDrr(HalfRegister& x, HalfRegister& y);
+    uint16_t ADDrrrr(Register& x, Register y);
+    uint16_t ADDrr(HalfRegister& x, HalfRegister y); // second arg does not need ref type?
     uint16_t ADDrnn(HalfRegister& x, uint16_t targetAddress);
     uint16_t ADDru8(HalfRegister& reg);
-    // uint16_t ADDSPi8();
+    uint16_t ADDSPi8();
     uint16_t SUBrr(HalfRegister& x, HalfRegister& y);
     uint16_t SUBrnn(HalfRegister& x, uint16_t targetAddress);
     uint16_t SUBru8(HalfRegister& reg);
+
+    // Additonal arithmetic operations
+    uint16_t ADCAr(HalfRegister reg);
+    uint16_t ADCAHL();
+    uint16_t ADCAu8();
+    uint16_t SBCAr(HalfRegister reg);
+    uint16_t SBCAHL();
+    uint16_t SBCAu8();
 
     // Compare registers
     uint16_t CPrr(HalfRegister& x, HalfRegister& y);
