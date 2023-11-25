@@ -62,16 +62,16 @@ void MemoryMap::writeWord(uint16_t address, uint16_t value){
     writeByte(address, value & LOWER_BYTEMASK);
 }
 
-bool MemoryMap::loadBootProgram(std::string path){
+bool MemoryMap::loadBootProgram(std::string const& path){
     isBooting = true;
     return loadBinary(path, bootMemory);
 }
 
-bool MemoryMap::loadCartridge(std::string path){
+bool MemoryMap::loadCartridge(std::string const& path){
     return loadBinary(path, memory);
 }
 
-bool MemoryMap::loadBinary(std::string path, std::vector<uint8_t>& target){
+bool MemoryMap::loadBinary(std::string const& path, std::vector<uint8_t>& target){
     std::ifstream fileStream(path.c_str(), std::ios_base::binary);
     if (!fileStream){
         return false;

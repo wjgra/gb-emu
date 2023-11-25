@@ -52,6 +52,7 @@ public:
     void requestInterrupt(uint8_t interrupt);
     void finish();
     void toggleHalt();
+    void simulateBoot();
 private:
     MemoryMap& memoryMap;
     Register AF, BC, DE, HL;

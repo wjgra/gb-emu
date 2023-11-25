@@ -3,22 +3,36 @@
 GBEmulator::GBEmulator() : cpu{memoryMap}, gpu{memoryMap, cpu}{
 }
 
-bool GBEmulator::start(){
+bool GBEmulator::start(std::string const& cartridgePath, std::string const& bootPath, bool printSerial){
     window = SDL_CreateWindow("GB-EMU", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winScale * winWidth, winScale * winHeight, winFlags);
-    if(!window){
+    if (!window){
         throw std::runtime_error("Failed to create SDL window");
     }
 
     gpu.initialiseRenderer(window);
 
-    if (!memoryMap.loadBootProgram(".//input//dmg_boot.gb")){
-        throw std::runtime_error("Failed to load boot program");
+    if (bootPath.length() != 0){
+        if (!memoryMap.loadBootProgram(bootPath)){
+                throw std::runtime_error("Failed to load boot program at " + bootPath);
+        }
+        std::cout << "Loaded boot program\n";
     }
-    std::cout << "Loaded boot program\n";
-    if (!memoryMap.loadCartridge(".//input//01-special.gb")){
-        throw std::runtime_error("Failed to load cartridge");
+    else{
+        cpu.simulateBoot();
+        std::cout << "Simulated boot program execution\n";
     }
-    std::cout << "Loaded cartridge\n";
+    
+    if (cartridgePath.length() != 0){
+        if (!memoryMap.loadCartridge(cartridgePath)){
+            throw std::runtime_error("Failed to load cartridge at " + cartridgePath);
+        }
+        std::cout << "Loaded cartridge\n";
+    }
+    else{
+        throw std::runtime_error("Specify cartridge path using '-i [PATH]'");
+    }
+    
+    printSerialPort = printSerial;
     
     if (SDL_Init( SDL_INIT_VIDEO ) < 0) {
         throw std::runtime_error("SDL failed to initialise (SDL error: " + std::string(SDL_GetError()) + ")");
@@ -49,6 +63,13 @@ void GBEmulator::frame(){
         gpu.update(cycles);
         cpu.handleInterrupts(); // 5 M-cycles (per interrupt?)
         cyclesSinceLastUpdate += cycles;
+
+        // Print serial data, if enabled
+        if (printSerialPort && memoryMap.readByte(0xFF02) == 0x81){
+            char c = memoryMap.readByte(0xFF01);
+            printf("%c", c);
+            memoryMap.writeByte(0xFF02, 0x00);
+        }
     }
     cyclesSinceLastUpdate -= maxCyclesThisFrame;
     gpu.render();
@@ -57,12 +78,6 @@ void GBEmulator::frame(){
         handleEvents(event);
     }
     tStart = tNow;
-
-    if (memoryMap.readByte(0xFF02) == 0x81){
-        char c = memoryMap.readByte(0xFF01);
-        printf("%c", c);
-        memoryMap.writeByte(0xFF02, 0x00);
-    }
 }
 
 void GBEmulator::handleEvents(SDL_Event const&  event){

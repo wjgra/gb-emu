@@ -15,12 +15,12 @@ public:
     uint16_t readWord(uint16_t address) const;
     void writeByte(uint16_t address, uint8_t value);
     void writeWord(uint16_t address, uint16_t value);
-    bool loadBootProgram(std::string path);
-    bool loadCartridge(std::string path);
+    bool loadBootProgram(std::string const& path);
+    bool loadCartridge(std::string const& path);
     void finishBooting();
 private:
     void writeByte(uint16_t address, uint8_t value, std::vector<uint8_t>& target);
-    bool loadBinary(std::string path, std::vector<uint8_t>& target);
+    bool loadBinary(std::string const& path, std::vector<uint8_t>& target);
     void transferDMA(uint8_t value);
     std::vector<uint8_t> memory;
     std::vector<uint8_t> bootMemory;

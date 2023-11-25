@@ -663,6 +663,72 @@ void CPU::toggleHalt(){
     halted = !halted;
 }
 
+void CPU::simulateBoot(){
+    // Register states
+    AF = 0x01B0;
+    BC = 0x0013;
+    DE = 0x00D8;
+    HL = 0x014D;
+    PC = 0x0100;
+    SP = 0xFFFE;
+    // Hardware register states
+    memoryMap.writeByte(0xFF00, 0xCF); 
+    memoryMap.writeByte(0xFF01, 0x00);
+    memoryMap.writeByte(0xFF02, 0x7E);
+    memoryMap.writeByte(0xFF04, 0xAB);
+    memoryMap.writeByte(0xFF05, 0x00);
+    memoryMap.writeByte(0xFF06, 0x00);
+    memoryMap.writeByte(0xFF07, 0xF8);
+    memoryMap.writeByte(0xFF0F, 0xE1);
+    memoryMap.writeByte(0xFF10, 0x80);
+    memoryMap.writeByte(0xFF11, 0xBF);
+    memoryMap.writeByte(0xFF12, 0xF3);
+    memoryMap.writeByte(0xFF13, 0xFF);
+    memoryMap.writeByte(0xFF14, 0xBF);
+    memoryMap.writeByte(0xFF16, 0x3F);
+    memoryMap.writeByte(0xFF17, 0x00);
+    memoryMap.writeByte(0xFF18, 0xFF);
+    memoryMap.writeByte(0xFF19, 0xBF);
+    memoryMap.writeByte(0xFF1A, 0x7F);
+    memoryMap.writeByte(0xFF1B, 0xFF);
+    memoryMap.writeByte(0xFF1C, 0x9F);
+    memoryMap.writeByte(0xFF1D, 0xFF);
+    memoryMap.writeByte(0xFF1E, 0xBF);
+    memoryMap.writeByte(0xFF20, 0xFF);
+    memoryMap.writeByte(0xFF21, 0x00);
+    memoryMap.writeByte(0xFF22, 0x00);
+    memoryMap.writeByte(0xFF23, 0xBF);
+    memoryMap.writeByte(0xFF24, 0x77);
+    memoryMap.writeByte(0xFF25, 0xF3);
+    memoryMap.writeByte(0xFF26, 0xF1);
+    memoryMap.writeByte(0xFF40, 0x91);
+    memoryMap.writeByte(0xFF41, 0x85);
+    memoryMap.writeByte(0xFF42, 0x00);
+    memoryMap.writeByte(0xFF43, 0x00);
+    memoryMap.writeByte(0xFF44, 0x00);
+    memoryMap.writeByte(0xFF45, 0x00);
+    memoryMap.writeByte(0xFF46, 0xFF);
+    memoryMap.writeByte(0xFF47, 0xFC);
+    memoryMap.writeByte(0xFF4A, 0x00);
+    memoryMap.writeByte(0xFF4B, 0x00);
+    memoryMap.writeByte(0xFF4D, 0xFF);
+    memoryMap.writeByte(0xFF4F, 0xFF);
+    memoryMap.writeByte(0xFF51, 0xFF);
+    memoryMap.writeByte(0xFF52, 0xFF);
+    memoryMap.writeByte(0xFF53, 0xFF);
+    memoryMap.writeByte(0xFF54, 0xFF);
+    memoryMap.writeByte(0xFF55, 0xFF);
+    memoryMap.writeByte(0xFF56, 0xFF);
+    memoryMap.writeByte(0xFF68, 0xFF);
+    memoryMap.writeByte(0xFF69, 0xFF);
+    memoryMap.writeByte(0xFF6A, 0xFF);
+    memoryMap.writeByte(0xFF6B, 0xFF);
+    memoryMap.writeByte(0xFF70, 0xFF);
+    memoryMap.writeByte(0xFFFF, 0x00);
+
+    memoryMap.finishBooting();
+}
+
 uint16_t CPU::executeNextOpcode(){
     /* if (PC == 0x60){
         std::cout << "!";
