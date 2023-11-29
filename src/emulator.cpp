@@ -32,7 +32,7 @@ bool GBEmulator::start(std::string const& cartridgePath, std::string const& boot
         throw std::runtime_error("Specify cartridge path using '-i [PATH]'");
     }
     
-    printSerialPort = printSerial;
+    verbose = printSerial;
     
     if (SDL_Init( SDL_INIT_VIDEO ) < 0) {
         throw std::runtime_error("SDL failed to initialise (SDL error: " + std::string(SDL_GetError()) + ")");
@@ -46,7 +46,7 @@ bool GBEmulator::start(std::string const& cartridgePath, std::string const& boot
 }
 
 void GBEmulator::finish(){
-    cpu.finish();
+    if (verbose) cpu.finish();
     quit = true;
 }
 
@@ -65,7 +65,7 @@ void GBEmulator::frame(){
         cyclesSinceLastUpdate += cycles;
 
         // Print serial data, if enabled
-        if (printSerialPort && memoryMap.readByte(0xFF02) == 0x81){
+        if (verbose && memoryMap.readByte(0xFF02) == 0x81){
             char c = memoryMap.readByte(0xFF01);
             printf("%c", c);
             memoryMap.writeByte(0xFF02, 0x00);

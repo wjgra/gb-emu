@@ -11,7 +11,7 @@
 class GBEmulator final{
 public:
     GBEmulator();
-    bool start(std::string const& cartridgePath, std::string const& bootPath, bool printSerial);
+    bool start(std::string const& cartridgePath, std::string const& bootPath, bool printVerbose);
 private:
     void finish();
     void frame();
@@ -27,7 +27,7 @@ private:
     bool quit = false;
     double const maxClockFreq = 4.194304; // MHz
     unsigned int cyclesSinceLastUpdate = 0;
-    bool printSerialPort = false;
+    bool verbose = false;
 };
 
 #endif

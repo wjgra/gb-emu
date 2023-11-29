@@ -177,7 +177,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x24] = "INC H";
     opcodeInfo[0x25] = "DEC H";
     opcodeInfo[0x26] = "LD H from (PC)";
-
+    opcodeInfo[0x27] = "DAA";
     opcodeInfo[0x28] = "JR by i8 offset if Z";
     opcodeInfo[0x29] = "ADD HL, HL";
     opcodeInfo[0x2A] = "LD A from (HL++)";
@@ -193,15 +193,15 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x34] = "INC (HL)";
     opcodeInfo[0x35] = "DEC (HL)";
     opcodeInfo[0x36] = "LD (HL) from (PC)";
-
+    opcodeInfo[0x37] = "SCF";
     opcodeInfo[0x38] = "JR by i8 offset if C";
     opcodeInfo[0x39] = "ADD HL, SP";
-
+    opcodeInfo[0x3A] = "LD A, (HL--)";
     opcodeInfo[0x3B] = "DEC SP";
     opcodeInfo[0x3C] = "INC A";
     opcodeInfo[0x3D] = "DEC A";
     opcodeInfo[0x3E] = "LD A from (PC)";
-
+    opcodeInfo[0x3F] = "CCF";
     opcodeInfo[0x40] = "LD B from B";
     opcodeInfo[0x41] = "LD B from C";
     opcodeInfo[0x42] = "LD B from D";
@@ -256,7 +256,7 @@ void CPU::initOpcodeInfo(){
     opcodeInfo[0x73] = "LD (HL) from E";
     opcodeInfo[0x74] = "LD (HL) from H";
     opcodeInfo[0x75] = "LD (HL) from L";
-
+    opcodeInfo[0x76] = "HALT";
     opcodeInfo[0x77] = "LD (HL) from A";
     opcodeInfo[0x78] = "LD A from B";
     opcodeInfo[0x79] = "LD A from C";
@@ -787,7 +787,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x24: return INCr(H);
     case 0x25: return DECr(H);
     case 0x26: return LDru8(H);
-
+    case 0x27: return DAA();
     case 0x28: return JRcce(FLAG_ZERO, true);
     case 0x29: return ADDrrrr(HL, HL);
     case 0x2A: return LDrnn(A, HL++);
@@ -803,7 +803,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x34: return INCnn(HL);
     case 0x35: return DECnn(HL);
     case 0x36: return LDrnn(A, HL--);
-
+    case 0x37: return SCF();
     case 0x38: return JRcce(FLAG_CARRY, true);
     case 0x39: return ADDrrrr(HL, SP);
     case 0x3A: return LDrnn(A, HL--);
@@ -811,7 +811,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x3C: return INCr(A);
     case 0x3D: return DECr(A);
     case 0x3E: return LDru8(A);
-
+    case 0x3F: return CCF();
     case 0x40: return LDrr(B, B);
     case 0x41: return LDrr(B, C);
     case 0x42: return LDrr(B, D);
@@ -866,7 +866,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x73: return LDnnr(HL, E);
     case 0x74: return LDnnr(HL, H);
     case 0x75: return LDnnr(HL, L);
-
+    case 0x76: return HALT();
     case 0x77: return LDnnr(HL, A);
     case 0x78: return LDrr(A, B);
     case 0x79: return LDrr(A, C);
@@ -986,8 +986,6 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     // No 0xEB opcode
     // No 0xEC opcode
     // No 0xED opcode
-
-
     case 0xEE: return XORAu8();
     case 0xEF: return RST(0x28);
     case 0xF0: return LDrFFu8(A);
@@ -998,7 +996,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0xF5: return PUSHAF();
     case 0xF6: return ORAu8();
     case 0xF7: return RST(0x30);
-    case 0xF8: return LDHLSPe();
+    case 0xF8: return LDHLSPi8();
     case 0xF9: return LDrrrr(SP, HL);
     case 0xFA: return LDru16(A);
     case 0xFB: return EI();
@@ -1291,6 +1289,52 @@ uint16_t CPU::STOP(){
     return 4;
 }
 
+uint16_t CPU::SCF(){
+    setFlag(FLAG_CARRY);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 4;
+}
+
+uint16_t CPU::CCF(){
+    setFlag(FLAG_CARRY, isFlagSet(FLAG_CARRY) ^ 1);
+    clearFlag(FLAG_HALFCARRY);
+    clearFlag(FLAG_SUBTRACT);
+    return 4;
+}
+
+uint16_t CPU::HALT(){
+    halted = true; // should strictly wait until an interrupt
+    return 4;
+}
+
+// Retroactively convert result of binary addition/subtraction
+// as stored in A, F to the result of the binary-coded decimal
+// addition/subtraction 
+uint16_t CPU::DAA(){
+    if (isFlagSet(FLAG_SUBTRACT)){
+        if (isFlagSet(FLAG_CARRY)){
+            A -= 0x60;
+        }
+        if (isFlagSet(FLAG_HALFCARRY)){
+            A -= 0x6;
+        }
+    }
+    else{
+        if (isFlagSet(FLAG_CARRY) || A > 0x99){
+            A += 0x60;
+            setFlag(FLAG_CARRY);
+        }
+        if (isFlagSet(FLAG_HALFCARRY) || (A & 0x0F) > 0x9){
+            A += 0x6;
+        }
+    }
+
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_HALFCARRY);
+    return 4;
+}
+
 // LDrru16 (0xN1, N = 0, 1, 2, 3)
 // Loads word at (PC) to given register
 uint16_t CPU::LDrru16(Register& targetReg){
@@ -1351,14 +1395,14 @@ uint16_t CPU::LDru16(HalfRegister& targetReg){
     return 16;
 }
 
-uint16_t CPU::LDHLSPe(){
-    int8_t eOffset = static_cast<int8_t>(readByteAtPC());
+uint16_t CPU::LDHLSPi8(){
+    int8_t i8Offset = static_cast<int8_t>(readByteAtPC());
     clearFlag(FLAG_ZERO);
     clearFlag(FLAG_SUBTRACT);
     // Calculate C and HC flags as for ADDrrrr
-    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (eOffset & 0xFFFF)) & 0x10000);
-    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (eOffset & 0xFFF)) & 0x1000);
-    HL = SP + eOffset;  
+    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (i8Offset & 0xFFFF)) > 0xFFFF);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (i8Offset & 0xFFF)) > 0xFFF);
+    HL = SP + i8Offset;  
     return 12;
 }
 
@@ -1383,7 +1427,7 @@ uint16_t CPU::PUSHrr(Register& dataReg){
 
 uint16_t CPU::PUSHAF(){
     SP -= 2;
-    memoryMap.writeWord(SP, uint16_t(AF) & 0xFFF0);
+    memoryMap.writeWord(SP, AF);
     return 16;
 }
 
@@ -1480,7 +1524,7 @@ uint16_t CPU::INCrr(Register& reg){
 }
 
 uint16_t CPU::INCr(HalfRegister& reg){
-    setFlag(FLAG_HALFCARRY, (((reg & 0xF) + 1) & 0x10));
+    setFlag(FLAG_HALFCARRY, (((reg & 0x0F) + 1) > 0x0F));
     ++reg;
     setFlag(FLAG_ZERO, reg == 0);
     clearFlag(FLAG_SUBTRACT);
@@ -1545,13 +1589,13 @@ uint16_t CPU::ADDru8(HalfRegister& reg){
 }
 
 uint16_t CPU::ADDSPi8(){
-    int8_t eOffset = static_cast<int8_t>(readByteAtPC());
+    int8_t i8Offset = static_cast<int8_t>(readByteAtPC());
     clearFlag(FLAG_ZERO);
     clearFlag(FLAG_SUBTRACT);
     // Calculate C and HC flags as for ADDrrrr
-    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (eOffset & 0xFFFF)) & 0x10000);
-    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (eOffset & 0xFFF)) & 0x1000);
-    SP += eOffset;      
+    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (i8Offset & 0xFFFF)) & 0x10000);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (i8Offset & 0xFFF)) & 0x1000);
+    SP += i8Offset;      
     return 16;
 }
 

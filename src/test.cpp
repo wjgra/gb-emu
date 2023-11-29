@@ -72,6 +72,16 @@ bool Test::testRegisterOps(){
     // -=
     temp = x;
     res = res && ((temp -= y) == uint16_t(x - y));
+    // ^=
+    temp = x;
+    res = res && ((temp ^ y) == uint16_t(x ^ y));
+    // |=
+    temp = x;
+    res = res && ((temp | y) == uint16_t(x | y));
+    // &=
+    
+    temp = x;
+    res = res && ((temp & y) == uint16_t(x & y));
     // -- (prefix)
     temp = x;
     res = res && ((--temp) == uint16_t(x - 1));
@@ -88,6 +98,7 @@ bool Test::testRegisterOps(){
     temp = x;
     res = res && ((temp++) == uint16_t(x));
     res = res && (temp == uint16_t(x + 1));
+    // Binary operations???
     return res;
 }
 

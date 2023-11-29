@@ -16,9 +16,9 @@ struct HalfRegister final{
     HalfRegister();
     HalfRegister(uint8_t byte);
     operator uint8_t() const;
-    HalfRegister& operator ^=(uint8_t rhs);
-    HalfRegister& operator |=(uint8_t rhs);
-    HalfRegister& operator &=(uint8_t rhs);
+    HalfRegister& operator^=(uint8_t rhs);
+    HalfRegister& operator|=(uint8_t rhs);
+    HalfRegister& operator&=(uint8_t rhs);
     HalfRegister& operator+=(uint8_t rhs);
     HalfRegister& operator-=(uint8_t rhs);
     HalfRegister& operator--();
@@ -86,8 +86,12 @@ private:
     //        transform unneeded (nn) opcodes to (HL), and r to A
     //        remove any cout statements?
 
+    // Control instructions
     uint16_t NOP();
     uint16_t STOP(); // Unimplemented
+    uint16_t SCF();
+    uint16_t CCF();
+    uint16_t HALT();
 
     // Load operations
     uint16_t LDrru16(Register& targetReg);
@@ -101,7 +105,7 @@ private:
     uint16_t LDrFFu8(HalfRegister& targetReg);
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
-    uint16_t LDHLSPe();
+    uint16_t LDHLSPi8();
 
     // Stack operations
     uint16_t POPrr(Register& targetReg);
@@ -143,6 +147,7 @@ private:
     uint16_t SBCAr(HalfRegister reg);
     uint16_t SBCAHL();
     uint16_t SBCAu8();
+    uint16_t DAA();
 
     // Compare registers
     uint16_t CPrr(HalfRegister& x, HalfRegister& y);

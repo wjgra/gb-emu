@@ -13,7 +13,7 @@ Command line arguments (can be used in any order, surplus args ignored)
 
 *OPTIONAL* -b [path]: set the path to the boot program
 
-*OPTIONAL* -p: print ASCII chars output via serial port
+*OPTIONAL* -v: verbose printing mode (ASCII chars output via serial port, PC and opcodes at exit)
 
 *OPTIONAL* -test: run tests (ignores other args)
  */
@@ -40,7 +40,7 @@ int main(int argc, char** argv){
                     bootPath = *arg;
                 }
             }
-            else if (strcmp(arg->c_str(), "-p") == 0)
+            else if (strcmp(arg->c_str(), "-v") == 0)
             {
                 printSerial = true;
             }

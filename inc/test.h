@@ -20,8 +20,8 @@ private:
         {"Read (16-bit) register", testReadRegister},
         {"Read half (8-bit) register", testReadHalfRegister},
         {"Test bit of half register", testBitHalfRegister},
-        {"Test register arithmetic operations", testRegisterOps},
-        {"Test half register arithmetic operations", testHalfRegisterOps},
+        {"Test register arithmetic/logical operations", testRegisterOps},
+        {"Test half register arithmetic/logical operations", testHalfRegisterOps},
         {"Memory unit byte r/w", testByteRW},
         {"Memory uint word r/w", testWordRW}
     };
