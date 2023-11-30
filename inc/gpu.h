@@ -47,6 +47,8 @@ private:
     uint8_t getScrollX() const;
 
     uint8_t getBgPalette() const;
+    uint8_t getObjPalette0() const;
+    uint8_t getObjPalette1() const;
 
     uint8_t getWinY() const;
     uint8_t getWinXPlusSeven() const;
@@ -67,7 +69,9 @@ private:
     uint8_t const tileSizeInBytes = 16;
     uint8_t const tileMapWidth = 32;
 
-    uint8_t const objSizeInBytes = 16;
+    uint8_t const objTileSizeInBytes = 16;
+    uint8_t const objOAMSizeInBytes = 4;
+    uint8_t const numberOfObjs = 40;
 
     uint8_t const winWidth = 160;
     uint8_t const winHeight = 144;
@@ -77,6 +81,7 @@ private:
     std::vector<uint32_t> LCDtexture, bgBuffer, framebuffer; // Issue: consider renaming
 
     uint16_t const LCDControlRegAddress = 0xFF40;
+    uint16_t const OAMAddress = 0xFE00;
 
 };
 

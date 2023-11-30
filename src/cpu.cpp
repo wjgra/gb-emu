@@ -733,7 +733,7 @@ uint16_t CPU::executeNextOpcode(){
     /* if (PC == 0x60){
         std::cout << "!";
     } */
-    if (PC == 0x100){
+    if (memoryMap.getBootStatus() && PC == 0x100){
         memoryMap.finishBooting();
     }
     if (halted){
@@ -1304,7 +1304,7 @@ uint16_t CPU::CCF(){
 }
 
 uint16_t CPU::HALT(){
-    halted = true; // should strictly wait until an interrupt
+    halted = true;
     return 4;
 }
 
@@ -1941,6 +1941,11 @@ uint16_t CPU::CALLu16(){
     memoryMap.writeWord(SP, PC);
     PC = nn;
     return 24;
+/* 
+    SP -= 2;
+    memoryMap.writeWord(SP, PC);
+    PC = readWordAtPC();
+    return 24; */
 }
 
 uint16_t CPU::CALLccu16(uint8_t condition, bool positiveCondition){
@@ -1949,6 +1954,7 @@ uint16_t CPU::CALLccu16(uint8_t condition, bool positiveCondition){
         return CALLu16();
     }
     else{
+        PC += 2; // u16 is still read
         return 12;
     }  
 }
@@ -2037,6 +2043,7 @@ void CPU::requestInterrupt(uint8_t interrupt){
     }
     HalfRegister regIntFlag = memoryMap.readByte(0xFF0F);
     regIntFlag.setBit(interrupt);
+    halted = false; // Wake up CPU if halted
     memoryMap.writeByte(0xFF0F, regIntFlag);
 }
 

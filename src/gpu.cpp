@@ -305,7 +305,58 @@ void GPU::drawWindowScanline(){
 }
 
 void GPU::drawObjScanline(){
+    // Load colour palette
+    std::array<uint32_t, 4> bgPalette;
+    fillPalette(bgPalette, getBgPalette());
+    // Iterate over OAM from last sprite to first
+    // Each sprite consists of four bytes:
+    //  0: y Pos + 16
+    //  1: x Pos + 8
+    //  2: Tile index
+    //  3: Attributes and flags
+    //      [3.0-3.3] unused for DMG
+    //      [3.4] obj palette
+    //      [3.5] mirror sprite in x
+    //      [3.6] mirror sprite in y
+    //      [3.7] bg/window should be prioritised for drawing (unless transparent)
+    for (uint16_t objOAMAddress = OAMAddress + objOAMSizeInBytes * (numberOfObjs - 1) ; objOAMAddress >= OAMAddress ; objOAMAddress -= objOAMSizeInBytes){
+        uint8_t const objY = memoryMap.readByte(objOAMAddress + 0) - 16;
+        uint8_t const objWidth = 8;
+        uint8_t const objHeight = objSize() ? 2 * objWidth : objWidth;
+        if ((objY <= getCurrentLine()) && (objY + objHeight > getCurrentLine())){
+            uint8_t const objX = memoryMap.readByte(objOAMAddress + 1) - 8;
+            uint8_t tileIndex = memoryMap.readByte(objOAMAddress + 2);
+            // In 8x16 mode, this is index of 'top' 8x8 tile in the sprite
+            if (objSize()){
+                tileIndex &= 0xFE;
+            }
+            HalfRegister const objAttributes = memoryMap.readByte(objOAMAddress + 3);
+            bool palette = objAttributes.testBit(4);
+            std::array<uint32_t, 4> objPalette;
+            fillPalette(objPalette, palette ? getObjPalette0() : getObjPalette1());
 
+            uint16_t tileMapDataAddress = 0x8000 + objTileSizeInBytes * tileIndex;
+            uint8_t const tileYPos = objAttributes.testBit(6) ?  (objHeight - 1) - (getCurrentLine() - objY): getCurrentLine() - objY; // pos within tile
+            tileMapDataAddress += 2 * tileYPos; // Issue: why 2?
+
+            for (int i = 0 ; i < objWidth ; ++i){
+                int pixelX = objX + i;
+                if (pixelX >= 0 && pixelX <= winWidth){
+                    uint8_t const tileXPos = objAttributes.testBit(5) ? tileWidthInPixels - 1 - pixelX : pixelX;
+                    
+                    uint8_t colourValue = getPaletteIndex(tileMapDataAddress, tileXPos);
+
+                    if (colourValue > 0){
+                        uint16_t index = getCurrentLine() * winWidth + pixelX;
+                        if(objAttributes.testBit(7) || !(bgBuffer[index] && 0x000000FF)){
+                            framebuffer[index] = objPalette[colourValue]; // reformulate to use iterators
+                        }
+                    }
+
+                }
+            }
+        }
+    }
 }
 
 void GPU::pushFrame(){
@@ -314,7 +365,7 @@ void GPU::pushFrame(){
 }
 
 // Issue: consider combining below functions - possible enum?
-/* get(ENUM){
+/* getStatusRegister(ENUM){
     return readByte(LCDControlRegAddress + ENUM);
 } */
 
@@ -346,8 +397,13 @@ uint8_t GPU::getBgPalette() const{
     return memoryMap.readByte(LCDControlRegAddress + 7);
 }
 
+uint8_t GPU::getObjPalette0() const{
+    return memoryMap.readByte(LCDControlRegAddress + 8);
+}
 
-// ...
+uint8_t GPU::getObjPalette1() const{
+    return memoryMap.readByte(LCDControlRegAddress + 9);
+}
 
 uint8_t GPU::getWinY() const{
     return memoryMap.readByte(LCDControlRegAddress + 0xA);

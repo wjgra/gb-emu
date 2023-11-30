@@ -20,6 +20,9 @@ uint8_t MemoryMap::readByte(uint16_t address) const{
         // Some games (including Tetris) use illegal reads/writes as a way to skip cycles!
         return 0x00;
     }
+    else if (address == 0xFF00){ // temp until input implemented
+        return 0xFF;
+    }
     else{
         return memory[address];
     }
@@ -40,6 +43,9 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
     else if(address >= 0xFEA0 && address <= 0xFEFF){
         // throw std::runtime_error("Access violation! Cannot write to [0xFEA0, 0xFEFF]");
     }
+    else if (address == 0xFF00){ // temp until input implemented
+
+    }
     else if (address == 0xFF04){
         // Attempting to write to divider register clears it
         memory[address] = 0;
@@ -47,7 +53,7 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
     else if (address == 0xFF46){
         // DMA transfer
         transferDMA(value);
-    }  
+    }
     else{
         memory[address] = value;
     }
@@ -85,6 +91,10 @@ bool MemoryMap::loadBinary(std::string const& path, std::vector<uint8_t>& target
 
 void MemoryMap::finishBooting(){
     isBooting = false;
+}
+
+bool MemoryMap::getBootStatus(){
+    return isBooting;
 }
 
 void MemoryMap::transferDMA(uint8_t value){
