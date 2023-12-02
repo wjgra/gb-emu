@@ -134,11 +134,11 @@ private:
     uint16_t CPL();
 
     // Bit operations (test, set, clear)
-    uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister reg);
+    uint16_t BITbr(uint8_t bit /*really u3 would be enough!*/, HalfRegister const& reg);
     uint16_t BITbnn(uint8_t bit, uint16_t address);
-    uint16_t SETbr(uint8_t bit, HalfRegister reg);
+    uint16_t SETbr(uint8_t bit, HalfRegister& reg);
     uint16_t SETbnn(uint8_t bit, uint16_t address);
-    uint16_t RESbr(uint8_t bit, HalfRegister reg);
+    uint16_t RESbr(uint8_t bit, HalfRegister& reg);
     uint16_t RESbnn(uint8_t bit, uint16_t address);
 
     // Enable/disable interrupts

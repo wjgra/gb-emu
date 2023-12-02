@@ -38,6 +38,7 @@ uint16_t MemoryMap::readWord(uint16_t address) const{
 void MemoryMap::writeByte(uint16_t address, uint8_t value){
     if (disableMemMapping){
         memory[address] = value;
+        return;
     }
     if (address < 0x8000){
         // throw std::runtime_error("Access violation! Cannot write to [0x0000, 0x7FFF]");

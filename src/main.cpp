@@ -25,7 +25,7 @@ int main(int argc, char** argv){
         bool printSerial = false;
         for(auto arg = arguments.begin() ; arg != arguments.end() ; ++arg){
             if (strcmp(arg->c_str(), "-t") == 0){
-                Test test;
+                TestFramework test;
                 return test.start();
             }
             else if (strcmp(arg->c_str(), "-i") == 0){

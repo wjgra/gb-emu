@@ -1,18 +1,20 @@
 #include "..\inc\test.h"
 
-bool Test::start(){
+bool TestFramework::start(){
+    // Run basic tests
     int numTestsPassed = 0;
-    int const n = tests.size();
+    int const n = basicTests.size();
     int const testDisplayWidth = 50;
     int const nWidth = (int)std::log10(n);
+    std::cout << "**BASIC TESTS**\n";
     for (int i = 0 ; i < n ; ++i){
         int const iWidth = (int)std::log10(i + 1);
-        std::cout << "Test " << i + 1 << " of " << n << " (" << tests[i].testName << "):";
-        int const padding = testDisplayWidth - nWidth - iWidth - tests[i].testName.length();
+        std::cout << "Test " << i + 1 << " of " << n << " (" << basicTests[i].testName << "):";
+        int const padding = testDisplayWidth - nWidth - iWidth - basicTests[i].testName.length();
         for (int j = 0 ; j < padding ; ++j){
             std::cout << " ";
         }
-        if ((this ->* (tests[i].run))()){
+        if ((this ->* (basicTests[i].run))()){
             std::cout << "PASSED\n";
             ++numTestsPassed;
         }
@@ -20,33 +22,77 @@ bool Test::start(){
             std::cout << "FAILED\n";
         }
     }
-    std::cout << "\n" << numTestsPassed << " out of " << n << " tests passed!\n";
-    return numTestsPassed < n;
+    std::cout << "\n" << numTestsPassed << " out of " << n << " basic tests passed!\n";
+    bool exitCode = numTestsPassed < n;
+
+    // Run opcode tests
+    std::cout << "**OPCODE TESTS**";
+    // Standard opcodes
+    std::vector<int> illegalOpcodes{0x10 /*STOP*/, 0xCB /*PREFIX*/, 0xD3, 0xDB, 0xDD, 0xE3, 0xE4, 0xEB, 0xEC, 0xED, 0xF4, 0xFC, 0xFD};
+    int const numColumns = 8;
+    numTestsPassed = 0;
+    for (int i = 0x00 ; i < 0x100; ++i){
+        std::cout << (((i % numColumns) == 0) ? "\n" : "\t") << "  0x";
+        std::cout << std::setfill('0') << std::setw(2)
+                  << std::hex << i << ": ";
+        if (std::find(illegalOpcodes.begin(), illegalOpcodes.end(), i) != illegalOpcodes.end()){
+            std::cout << "N/A";
+        }
+        else{
+            bool result = testOpcode(i, false);
+            if (result){
+                ++numTestsPassed;
+                std::cout << "PASSED";
+            }
+            else{
+                std::cout << "FAILED";
+            }
+            exitCode = exitCode || result;
+        }
+    }
+    std::cout << "\n";
+    // CB opcodes
+    for (int i = 0x00 ; i < 0x100; ++i){
+        std::cout << (((i % numColumns) == 0) ? "\n" : "\t") << "0xcb";
+        std::cout << std::setfill('0') << std::setw(2)
+                  << std::hex << i << ": ";
+        bool result = testOpcode(i, true);
+        if (result){
+            ++numTestsPassed;
+            std::cout << "PASSED";
+        }
+        else{
+            std::cout << "FAILED";
+        }
+        exitCode = exitCode || result;
+    }
+    std::cout << std::dec << "\n\n" << numTestsPassed << " out of " << (0x200 - illegalOpcodes.size()) << " opcode tests passed!\n";
+    return exitCode;
 }
 
-/* bool Test::testSystemEndianness(){
+/* bool TestFramework::testSystemEndianness(){
     uint16_t word = 0x1234;
     uint8_t* mLower = reinterpret_cast<uint8_t*>(&word);
     return (*mLower != 0x34 || *(mLower + 1) != 0x12);
 } */
 
-bool Test::testReadRegister(){
+bool TestFramework::testReadRegister(){
     Register reg(0x34, 0x12);
     return reg == 0x1234;
 }
 
-bool Test::testReadHalfRegister(){
+bool TestFramework::testReadHalfRegister(){
     Register reg(0x1234);
     return (reg.lowerByte == 0x34 && reg.upperByte == 0x12);
 }
 
-bool Test::testByteRW(){
+bool TestFramework::testByteRW(){
     MemoryMap memUnit;
     memUnit.writeByte(0xABCD, 0x56);
     return memUnit.readByte(0xABCD) == 0x56;
 }
 
-bool Test::testWordRW(){
+bool TestFramework::testWordRW(){
     MemoryMap memUnit;
     memUnit.writeWord(0xABCD, 0x5678);
     return memUnit.readWord(0xABCD) == 0x5678 &&
@@ -54,7 +100,7 @@ bool Test::testWordRW(){
            memUnit.readByte(0xABCD + 1) == 0x56;
 }
 
-bool Test::testBitHalfRegister(){
+bool TestFramework::testBitHalfRegister(){
     bool res = true;
     for (int i = 0 ; i < 8 ; ++i){
         HalfRegister reg{uint8_t(0b1 << i)};
@@ -63,7 +109,7 @@ bool Test::testBitHalfRegister(){
     return res;
 }
 
-bool Test::testRegisterOps(){
+bool TestFramework::testRegisterOps(){
     bool res = true;
     uint16_t x = 0x1234, y = 0x5678;
     // +=
@@ -102,7 +148,7 @@ bool Test::testRegisterOps(){
     return res;
 }
 
-bool Test::testHalfRegisterOps(){
+bool TestFramework::testHalfRegisterOps(){
     bool res = true;
     uint8_t x = 0x12, y = 0x34;
     // ^=
@@ -161,34 +207,20 @@ void stateFromJSON(iterator_type it, CPUState& result, std::string name){
 }
 
 // Currently does not test 'interrupts' or 'halted'
-bool Test::tempTest(){
-    /* std::ifstream f("tests\\00.json");
+bool TestFramework::testOpcode(uint8_t opcode, bool CBOpcode){
+    std::stringstream path{};
+    path << "tests\\";
+    if (CBOpcode){
+        path << "cb ";
+    }
+    path << std::setfill('0') << std::setw(2) 
+         << std::hex << int(opcode) << ".json" << std::dec;
+    std::ifstream testFile(path.str());
+    if (!testFile){
+        return false;
+    }
     using json = nlohmann::json;
-    json data = json::parse(f);
-    auto it = data.begin(); */
-   /*  CPUState in;stateFromJSON(it, in, "initial");
-    
-
-   
-        CPUState final;
-        stateFromJSON(it, final, "final");
-
-    MemoryMap mem;
-    mem.finishBooting();
-    CPU cpu(mem);
-    cpu.setState(in);
-    uint16_t cycles = cpu.executeNextOpcode();
-    CPUState out;
-    cpu.getState(out);
-    out.interrupts = false; //temp
-    out.halted = false;
-    bool res = out == final;
-    res = res && (cycles == ((*it)["cycles"].size() * 4));
-    return res; */
-
-    std::ifstream f("tests\\03.json");
-    using json = nlohmann::json;
-    json data = json::parse(f);
+    json data = json::parse(testFile);
     auto it = data.begin();   
     bool res = true;
     for (auto it = data.begin(); it != data.end() ; ++it){
@@ -207,8 +239,18 @@ bool Test::tempTest(){
         out.interrupts = false; // Issue: currently does not test this
         out.halted = false; // Issue: currently does not test this
         res = res && (out == final);
+        if (out != final){
+            for (int i = 0 ; i < 0x10000 ; ++i){
+                if (out.memory[i] != final.memory[i]){
+                    int a;
+                }
+            }
+        }
         // Compare cycles
         res = res && (cycles == ((*it)["cycles"].size() * 4)); 
+        if ((cycles != ((*it)["cycles"].size() * 4))){
+            int a;
+        }
     }
     return res;
 }  

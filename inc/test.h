@@ -5,27 +5,27 @@
 #include "..\inc\json.hpp"
 
 #include <vector>
+#include <algorithm>
 #include <cmath>
 
-class Test final{
+class TestFramework final{
 public:
     bool start();
 private:
-    struct UnitTest{
+    struct BasicTest{
         std::string testName;
-        bool (Test::*run)();
+        bool (TestFramework::*run)();
     };
-    std::vector<UnitTest> tests 
+    std::vector<BasicTest> basicTests 
     {
         // {"System endianness", testSystemEndianness},
-        {"Read (16-bit) register", testReadRegister},
-        {"Read half (8-bit) register", testReadHalfRegister},
-        {"Test bit of half register", testBitHalfRegister},
-        {"Test register arithmetic/logical operations", testRegisterOps},
-        {"Test half register arithmetic/logical operations", testHalfRegisterOps},
-        {"Memory unit byte r/w", testByteRW},
-        {"Memory uint word r/w", testWordRW},
-        {"Temp test", tempTest}
+        {"Register (16-bit) r/w", testReadRegister},
+        {"Half register (8-bit) r/w", testReadHalfRegister},
+        {"Half register bit tests", testBitHalfRegister},
+        {"Register arithmetic/logical operations", testRegisterOps},
+        {"Half register arithmetic/logical operations", testHalfRegisterOps},
+        {"Memory map byte r/w", testByteRW},
+        {"Memory map word r/w", testWordRW}
     };
     // CPU/Register tests
     // bool testSystemEndianness();
@@ -34,12 +34,11 @@ private:
     bool testBitHalfRegister();
     bool testRegisterOps();
     bool testHalfRegisterOps();
-    // Opcode tests
-    bool tempTest();
-
     // MMU tests
     bool testByteRW();
     bool testWordRW();
+    // Opcode tests
+    bool testOpcode(uint8_t opcode, bool CBOpcode);
 };
 
 #endif

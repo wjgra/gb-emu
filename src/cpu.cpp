@@ -636,9 +636,6 @@ void CPU::setState(CPUState const& state){
 }
 
 uint16_t CPU::executeNextOpcode(){
-    /* if (PC == 0x60){
-        std::cout << "!";
-    } */
     if (memoryMap.getBootStatus() && PC == 0x100){
         memoryMap.finishBooting();
     }
@@ -924,7 +921,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x00: return RLCr(B);
     case 0x01: return RLCr(C);
     case 0x02: return RLCr(D);
-    case 0x03: return RLCr(B);
+    case 0x03: return RLCr(E);
     case 0x04: return RLCr(H);
     case 0x05: return RLCr(L);
     case 0x06: return RLCHL();
@@ -1594,7 +1591,7 @@ uint16_t CPU::CPL(){
     return 4;
 }
 
-uint16_t CPU::BITbr(uint8_t bit, HalfRegister reg){
+uint16_t CPU::BITbr(uint8_t bit, HalfRegister const& reg){
     setFlag(FLAG_ZERO, !reg.testBit(bit));
     setFlag(FLAG_HALFCARRY);
     clearFlag(FLAG_SUBTRACT);
@@ -1606,7 +1603,7 @@ uint16_t CPU::BITbnn(uint8_t bit, uint16_t address){
     return 12;
 }
 
-uint16_t CPU::SETbr(uint8_t bit, HalfRegister reg){
+uint16_t CPU::SETbr(uint8_t bit, HalfRegister& reg){
     reg.setBit(bit);
     return 8;
 }
@@ -1618,7 +1615,7 @@ uint16_t CPU::SETbnn(uint8_t bit, uint16_t address){
     return 16;
 }
 
-uint16_t CPU::RESbr(uint8_t bit, HalfRegister reg){
+uint16_t CPU::RESbr(uint8_t bit, HalfRegister& reg){
     reg.clearBit(bit);
     return 8;
 }
