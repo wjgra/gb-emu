@@ -25,7 +25,7 @@ struct HalfRegister final{
 };
 struct Register final{
     HalfRegister lowerByte;
-    HalfRegister upperByte; // GB is little endian, so should really be other way around, but this is only relevant for testSystemEndianness...
+    HalfRegister upperByte;
     Register();
     Register(uint8_t lowerByte, uint8_t upperByte);
     Register(uint16_t val);

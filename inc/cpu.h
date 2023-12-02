@@ -84,6 +84,7 @@ private:
     uint16_t LDrrrr(Register& targetReg, Register& dataReg);
     uint16_t LDru16(HalfRegister& targetReg);
     uint16_t LDHLSPi8();
+    uint16_t LDHLu8();
 
     // Stack operations
     uint16_t POPrr(Register& targetReg);

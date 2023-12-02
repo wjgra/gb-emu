@@ -705,7 +705,7 @@ uint16_t CPU::executeOpcode(uint8_t opcode){
     case 0x33: return INCrr(SP);
     case 0x34: return INCnn(HL);
     case 0x35: return DECnn(HL);
-    case 0x36: return LDrnn(A, HL--);
+    case 0x36: return LDHLu8();
     case 0x37: return SCF();
     case 0x38: return JRcce(FLAG_CARRY, true);
     case 0x39: return ADDrrrr(HL, SP);
@@ -929,7 +929,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x08: return RRCr(B);
     case 0x09: return RRCr(C);
     case 0x0A: return RRCr(D);
-    case 0x0B: return RRCr(B);
+    case 0x0B: return RRCr(E);
     case 0x0C: return RRCr(H);
     case 0x0D: return RRCr(L);
     case 0x0E: return RRCHL();
@@ -937,7 +937,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x10: return RLr(B);
     case 0x11: return RLr(C);
     case 0x12: return RLr(D);
-    case 0x13: return RLr(B);
+    case 0x13: return RLr(E);
     case 0x14: return RLr(H);
     case 0x15: return RLr(L);
     case 0x16: return RLHL();
@@ -945,7 +945,7 @@ uint16_t CPU::executeCBOpcode(uint8_t opcode){
     case 0x18: return RRr(B);
     case 0x19: return RRr(C);
     case 0x1A: return RRr(D);
-    case 0x1B: return RRr(B);
+    case 0x1B: return RRr(E);
     case 0x1C: return RRr(H);
     case 0x1D: return RRr(L);
     case 0x1E: return RRHL();
@@ -1302,10 +1302,14 @@ uint16_t CPU::LDHLSPi8(){
     int8_t i8Offset = static_cast<int8_t>(readByteAtPC());
     clearFlag(FLAG_ZERO);
     clearFlag(FLAG_SUBTRACT);
-    // Calculate C and HC flags as for ADDrrrr
-    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (i8Offset & 0xFFFF)) > 0xFFFF);
-    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (i8Offset & 0xFFF)) > 0xFFF);
+    setFlag(FLAG_CARRY, ((SP & 0xFF) + (i8Offset & 0xFF)) > 0xFF);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xF) + (i8Offset & 0xF)) > 0xF);
     HL = SP + i8Offset;  
+    return 12;
+}
+
+uint16_t CPU::LDHLu8(){
+    memoryMap.writeByte(HL, readByteAtPC());
     return 12;
 }
 
@@ -1396,7 +1400,7 @@ uint16_t CPU::ORAu8(){
 // ANDAr
 // ANDs A with given half register and stores result in A
 uint16_t CPU::ANDAr(HalfRegister reg){
-    A |= reg;
+    A &= reg;
     setFlag(FLAG_ZERO, A == 0);
     clearFlag(FLAG_SUBTRACT);
     setFlag(FLAG_HALFCARRY);
@@ -1405,7 +1409,7 @@ uint16_t CPU::ANDAr(HalfRegister reg){
 }
 
 uint16_t CPU::ANDAnn(uint16_t dataAddress){
-    A |= memoryMap.readByte(dataAddress);
+    A &= memoryMap.readByte(dataAddress);
     setFlag(FLAG_ZERO, A == 0);
     clearFlag(FLAG_SUBTRACT);
     setFlag(FLAG_HALFCARRY);
@@ -1414,7 +1418,7 @@ uint16_t CPU::ANDAnn(uint16_t dataAddress){
 }
 
 uint16_t CPU::ANDAu8(){
-    A |= readByteAtPC();
+    A &= readByteAtPC();
     setFlag(FLAG_ZERO, A == 0);
     clearFlag(FLAG_SUBTRACT);
     setFlag(FLAG_HALFCARRY);
@@ -1495,9 +1499,8 @@ uint16_t CPU::ADDSPi8(){
     int8_t i8Offset = static_cast<int8_t>(readByteAtPC());
     clearFlag(FLAG_ZERO);
     clearFlag(FLAG_SUBTRACT);
-    // Calculate C and HC flags as for ADDrrrr
-    setFlag(FLAG_CARRY, ((SP & 0xFFFF) + (i8Offset & 0xFFFF)) & 0x10000);
-    setFlag(FLAG_HALFCARRY, ((SP & 0xFFF) + (i8Offset & 0xFFF)) & 0x1000);
+    setFlag(FLAG_CARRY, ((SP & 0xFF) + (i8Offset & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((SP & 0xF) + (i8Offset & 0xF)) & 0x10);
     SP += i8Offset;      
     return 16;
 }
@@ -1524,9 +1527,12 @@ uint16_t CPU::SUBru8(HalfRegister& reg){
 }
 
 uint16_t CPU::ADCAr(HalfRegister reg){
-    // uint8_t Aprev = A;
-    uint8_t addValue = reg + isFlagSet(FLAG_CARRY);
-    ADDrr(A, addValue); // what if addValue becomes zero ???
+    uint8_t carry = isFlagSet(FLAG_CARRY);
+    setFlag(FLAG_CARRY, ((A & 0xFF) + (reg & 0xFF) + (carry & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((A & 0xF) + (reg & 0xF) + (carry & 0xF)) & 0x10);
+    A += reg + carry;
+    setFlag(FLAG_ZERO, A == 0);
+    clearFlag(FLAG_SUBTRACT);
     return 4;
 }
 
@@ -1541,14 +1547,22 @@ uint16_t CPU::ADCAu8(){
 }
 
 uint16_t CPU::SBCAr(HalfRegister reg){
-    uint8_t Aprev = A;
-    uint8_t subValue = reg + isFlagSet(FLAG_CARRY);// what if subValue becomes zero ???
+    /* uint8_t Aprev = A;
+    uint8_t subValue = uint8_t(reg) + uint8_t(isFlagSet(FLAG_CARRY));// what if subValue becomes zero ???
     A -= subValue;
     setFlag(FLAG_ZERO, A == 0);
     setFlag(FLAG_SUBTRACT);
     // ?? Same as for SUB? Can I just use SUBrr(A, subValue)
     setFlag(FLAG_CARRY, ((Aprev & 0xFF) - (subValue & 0xFF)) & 0x100);
     setFlag(FLAG_HALFCARRY, ((Aprev & 0xF) - (subValue & 0xF)) & 0x10);
+    return 4; */
+
+    uint8_t carry = isFlagSet(FLAG_CARRY);
+    setFlag(FLAG_CARRY, ((A & 0xFF) - (reg & 0xFF) - (carry & 0xFF)) & 0x100);
+    setFlag(FLAG_HALFCARRY, ((A & 0xF) - (reg & 0xF) - (carry & 0xF)) & 0x10);
+    A -= reg + carry;
+    setFlag(FLAG_ZERO, A == 0);
+    setFlag(FLAG_SUBTRACT);
     return 4;
 }
 

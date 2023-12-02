@@ -18,7 +18,6 @@ private:
     };
     std::vector<BasicTest> basicTests 
     {
-        // {"System endianness", testSystemEndianness},
         {"Register (16-bit) r/w", testReadRegister},
         {"Half register (8-bit) r/w", testReadHalfRegister},
         {"Half register bit tests", testBitHalfRegister},
@@ -28,7 +27,6 @@ private:
         {"Memory map word r/w", testWordRW}
     };
     // CPU/Register tests
-    // bool testSystemEndianness();
     bool testReadRegister();
     bool testReadHalfRegister();
     bool testBitHalfRegister();
@@ -42,5 +40,3 @@ private:
 };
 
 #endif
-
-// Consider including a verbose option
