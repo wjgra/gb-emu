@@ -7,6 +7,9 @@ MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00){
 }
 
 uint8_t MemoryMap::readByte(uint16_t address) const{
+    if (disableMemMapping){
+        return memory[address];
+    }
     if (isBooting && (address < 0x0100)){
         return bootMemory[address];
     }
@@ -33,6 +36,9 @@ uint16_t MemoryMap::readWord(uint16_t address) const{
 }
 
 void MemoryMap::writeByte(uint16_t address, uint8_t value){
+    if (disableMemMapping){
+        memory[address] = value;
+    }
     if (address < 0x8000){
         // throw std::runtime_error("Access violation! Cannot write to [0x0000, 0x7FFF]");
     }
@@ -99,10 +105,15 @@ bool MemoryMap::getBootStatus() const{
 
 void MemoryMap::setState(std::vector<uint8_t> const& state){
     memory = state;
+    finishBooting();
 }
 
 void MemoryMap::getState(std::vector<uint8_t>& state) const{
     state = memory;
+}
+
+void MemoryMap::disableMapping(bool disabled){
+    disableMemMapping = disabled;
 }
 
 void MemoryMap::transferDMA(uint8_t value){

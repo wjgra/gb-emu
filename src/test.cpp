@@ -139,15 +139,40 @@ bool Test::testHalfRegisterOps(){
     return res;
 }
 
+template <class iterator_type>
+void stateFromJSON(iterator_type it, CPUState& result, std::string name){
+    result.A = (*it)[name.c_str()]["a"].template get<uint8_t>();
+    result.F = (*it)[name.c_str()]["f"].template get<uint8_t>();
+    result.B = (*it)[name.c_str()]["b"].template get<uint8_t>();
+    result.C = (*it)[name.c_str()]["c"].template get<uint8_t>(); 
+    result.D = (*it)[name.c_str()]["d"].template get<uint8_t>();
+    result.E = (*it)[name.c_str()]["e"].template get<uint8_t>();
+    result.H = (*it)[name.c_str()]["h"].template get<uint8_t>();
+    result.L = (*it)[name.c_str()]["l"].template get<uint8_t>();
+    result.SP = (*it)[name.c_str()]["sp"].template get<uint16_t>();
+    result.PC = (*it)[name.c_str()]["pc"].template get<uint16_t>(); 
+    result.interrupts = false;
+    result.halted = false;
+    result.memory = std::vector<uint8_t>(0x10000, 0);
+    auto it2 = (*it)[name.c_str()]["ram"].begin();
+    for (; it2 != (*it)[name.c_str()]["ram"].end(); ++it2){
+        result.memory[(*it2)[0].template get<uint16_t>()] = (*it2)[1].template get<uint8_t>();
+    }
+}
+
+// Currently does not test 'interrupts' or 'halted'
 bool Test::tempTest(){
-    CPUState in{.memory = std::vector<uint8_t>(0x10000, 0), .A = 65, .F = 79, .B = 95, .C = 205, .D = 147, .E = 168, .H = 98, .L = 251, .SP = 9383, .PC = 16826,        
-         .interrupts = false, .halted = false};
-         in.memory[16826] = 10;
-         in.memory[24525] = 174;
-    CPUState final{.memory = std::vector<uint8_t>(0x10000, 0), .A = 174, .F = 79, .B = 95, .C = 205, .D = 147, .E = 168, .H = 98, .L = 251, .SP = 9383, .PC = 16827,        
-         .interrupts = false, .halted = false};
-         final.memory[16826] = 10;
-         final.memory[24525] = 174;
+    /* std::ifstream f("tests\\00.json");
+    using json = nlohmann::json;
+    json data = json::parse(f);
+    auto it = data.begin(); */
+   /*  CPUState in;stateFromJSON(it, in, "initial");
+    
+
+   
+        CPUState final;
+        stateFromJSON(it, final, "final");
+
     MemoryMap mem;
     mem.finishBooting();
     CPU cpu(mem);
@@ -155,7 +180,35 @@ bool Test::tempTest(){
     uint16_t cycles = cpu.executeNextOpcode();
     CPUState out;
     cpu.getState(out);
+    out.interrupts = false; //temp
+    out.halted = false;
     bool res = out == final;
-    res = res && (cycles == 8);
+    res = res && (cycles == ((*it)["cycles"].size() * 4));
+    return res; */
+
+    std::ifstream f("tests\\03.json");
+    using json = nlohmann::json;
+    json data = json::parse(f);
+    auto it = data.begin();   
+    bool res = true;
+    for (auto it = data.begin(); it != data.end() ; ++it){
+        CPUState initial, final, out;
+        // Get initial and final test states
+        stateFromJSON(it, initial, "initial");
+        stateFromJSON(it, final, "final");
+        // Configure and run test
+        MemoryMap mem;
+        CPU cpu(mem);
+        mem.disableMapping(); // Tests assume a flat block of RAM
+        cpu.setState(initial);
+        uint16_t cycles = cpu.executeNextOpcode();
+        // Compare output with final
+        cpu.getState(out);
+        out.interrupts = false; // Issue: currently does not test this
+        out.halted = false; // Issue: currently does not test this
+        res = res && (out == final);
+        // Compare cycles
+        res = res && (cycles == ((*it)["cycles"].size() * 4)); 
+    }
     return res;
-}
+}  

@@ -21,6 +21,7 @@ public:
     bool getBootStatus() const;
     void setState(std::vector<uint8_t> const& state);
     void getState(std::vector<uint8_t>& state) const;
+    void disableMapping(bool disabled = true);
 private:
     void writeByte(uint16_t address, uint8_t value, std::vector<uint8_t>& target);
     bool loadBinary(std::string const& path, std::vector<uint8_t>& target);
@@ -28,6 +29,7 @@ private:
     std::vector<uint8_t> memory;
     std::vector<uint8_t> bootMemory;
     bool isBooting = false;
+    bool disableMemMapping = false;
 };
 
 #endif

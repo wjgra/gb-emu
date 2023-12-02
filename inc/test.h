@@ -2,6 +2,7 @@
 #define  _GB_EMU_TEST_H_
 
 #include "..\inc\emulator.h"
+#include "..\inc\json.hpp"
 
 #include <vector>
 #include <cmath>
