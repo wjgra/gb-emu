@@ -1,6 +1,7 @@
 #ifndef _GB_EMU_CPU_H_
 #define  _GB_EMU_CPU_H_
 
+#include "..\inc\registers.h"
 #include "..\inc\memory_map.h"
 
 #include <cstdint>
@@ -11,39 +12,14 @@
 
 #include <SDL.h>
 
-struct HalfRegister final{
-    uint8_t byte;
-    HalfRegister();
-    HalfRegister(uint8_t byte);
-    operator uint8_t() const;
-    HalfRegister& operator^=(uint8_t rhs);
-    HalfRegister& operator|=(uint8_t rhs);
-    HalfRegister& operator&=(uint8_t rhs);
-    HalfRegister& operator+=(uint8_t rhs);
-    HalfRegister& operator-=(uint8_t rhs);
-    HalfRegister& operator--();
-    HalfRegister operator--(int);
-    HalfRegister& operator++();
-    HalfRegister operator++(int);
-    bool testBit(uint8_t bit) const;
-    void setBit(uint8_t bit);
-    void setBit(uint8_t bit, bool value);
-    void clearBit(uint8_t bit);
+struct CPUState final{
+    std::vector<uint8_t> memory;
+    HalfRegister A, F, B, C, D, E, H, L;
+    Register SP, PC;
+    bool interrupts, halted;
+    bool operator==(const CPUState&) const = default;
 };
-struct Register final{
-    HalfRegister lowerByte;
-    HalfRegister upperByte; // GB is little endian, so should really be other way around, but this is only relevant for testSystemEndianness...
-    Register();
-    Register(uint8_t lowerByte, uint8_t upperByte);
-    Register(uint16_t val);
-    operator uint16_t() const;
-    Register& operator--();
-    Register operator--(int);
-    Register& operator++();
-    Register operator++(int);
-    Register& operator+=(uint16_t rhs);
-    Register& operator-=(uint16_t rhs);
-};
+
 class CPU final{
 public:
     CPU(MemoryMap& memMap);
@@ -53,6 +29,8 @@ public:
     void finish();
     void toggleHalt();
     void simulateBoot();
+    void getState(CPUState& state);
+    void setState(CPUState const& state);
 private:
     MemoryMap& memoryMap;
     Register AF, BC, DE, HL;

@@ -138,3 +138,24 @@ bool Test::testHalfRegisterOps(){
     res = res && (temp == uint8_t(x + 1));
     return res;
 }
+
+bool Test::tempTest(){
+    CPUState in{.memory = std::vector<uint8_t>(0x10000, 0), .A = 65, .F = 79, .B = 95, .C = 205, .D = 147, .E = 168, .H = 98, .L = 251, .SP = 9383, .PC = 16826,        
+         .interrupts = false, .halted = false};
+         in.memory[16826] = 10;
+         in.memory[24525] = 174;
+    CPUState final{.memory = std::vector<uint8_t>(0x10000, 0), .A = 174, .F = 79, .B = 95, .C = 205, .D = 147, .E = 168, .H = 98, .L = 251, .SP = 9383, .PC = 16827,        
+         .interrupts = false, .halted = false};
+         final.memory[16826] = 10;
+         final.memory[24525] = 174;
+    MemoryMap mem;
+    mem.finishBooting();
+    CPU cpu(mem);
+    cpu.setState(in);
+    uint16_t cycles = cpu.executeNextOpcode();
+    CPUState out;
+    cpu.getState(out);
+    bool res = out == final;
+    res = res && (cycles == 8);
+    return res;
+}

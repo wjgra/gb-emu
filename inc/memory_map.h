@@ -18,7 +18,9 @@ public:
     bool loadBootProgram(std::string const& path);
     bool loadCartridge(std::string const& path);
     void finishBooting();
-    bool getBootStatus();
+    bool getBootStatus() const;
+    void setState(std::vector<uint8_t> const& state);
+    void getState(std::vector<uint8_t>& state) const;
 private:
     void writeByte(uint16_t address, uint8_t value, std::vector<uint8_t>& target);
     bool loadBinary(std::string const& path, std::vector<uint8_t>& target);

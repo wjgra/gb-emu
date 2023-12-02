@@ -93,8 +93,16 @@ void MemoryMap::finishBooting(){
     isBooting = false;
 }
 
-bool MemoryMap::getBootStatus(){
+bool MemoryMap::getBootStatus() const{
     return isBooting;
+}
+
+void MemoryMap::setState(std::vector<uint8_t> const& state){
+    memory = state;
+}
+
+void MemoryMap::getState(std::vector<uint8_t>& state) const{
+    state = memory;
 }
 
 void MemoryMap::transferDMA(uint8_t value){

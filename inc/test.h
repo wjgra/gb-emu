@@ -23,7 +23,8 @@ private:
         {"Test register arithmetic/logical operations", testRegisterOps},
         {"Test half register arithmetic/logical operations", testHalfRegisterOps},
         {"Memory unit byte r/w", testByteRW},
-        {"Memory uint word r/w", testWordRW}
+        {"Memory uint word r/w", testWordRW},
+        {"Temp test", tempTest}
     };
     // CPU/Register tests
     // bool testSystemEndianness();
@@ -33,7 +34,7 @@ private:
     bool testRegisterOps();
     bool testHalfRegisterOps();
     // Opcode tests
-
+    bool tempTest();
 
     // MMU tests
     bool testByteRW();
