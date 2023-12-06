@@ -38,6 +38,8 @@ bool GBEmulator::start(std::string const& cartridgePath, std::string const& boot
         throw std::runtime_error("SDL failed to initialise (SDL error: " + std::string(SDL_GetError()) + ")");
     }
     
+    directionInputReg = 0x00;
+    buttonInputReg = 0x00;
     tStart = std::chrono::high_resolution_clock::now();
     while (!quit){
         frame();
@@ -59,7 +61,7 @@ void GBEmulator::frame(){
     uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
     while (cyclesSinceLastUpdate < maxCyclesThisFrame){
         uint16_t cycles = cpu.executeNextOpcode();
-        // update timers
+        updateTimerRegisters(cycles);
         gpu.update(cycles);
         cpu.handleInterrupts(); // 5 M-cycles (per interrupt?)
         cyclesSinceLastUpdate += cycles;
@@ -77,14 +79,79 @@ void GBEmulator::frame(){
     while (SDL_PollEvent(&event)){
         handleEvents(event);
     }
+    cpu.processInput(buttonInputReg, directionInputReg);
     tStart = tNow;
+}
+
+void GBEmulator::updateTimerRegisters(uint16_t cycles){
+    uint16_t const TIMA = 0xFF05;
+    uint16_t const TMA = 0xFF06;
+    uint16_t const TMC = 0xFF07;
 }
 
 void GBEmulator::handleEvents(SDL_Event const&  event){
     switch(event.type){
         case SDL_KEYDOWN:
-            if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-                cpu.toggleHalt();
+            switch(event.key.keysym.scancode){
+                case SDL_SCANCODE_SPACE:
+                    cpu.toggleHalt();
+                    break;
+                case SDL_SCANCODE_D:
+                    directionInputReg |= (1u << 0); // R
+                    break;
+                case SDL_SCANCODE_A:
+                    directionInputReg |= (1u << 1); // L
+                    break;
+                case SDL_SCANCODE_W:
+                    directionInputReg |= (1u << 2); // U
+                    break;
+                case SDL_SCANCODE_S:
+                    directionInputReg |= (1u << 3); // D
+                    break;
+                case SDL_SCANCODE_O:
+                    buttonInputReg |= (1u << 0); // A
+                    break;
+                case SDL_SCANCODE_P:
+                    buttonInputReg |= (1u << 1); // B
+                    break;
+                case SDL_SCANCODE_L:
+                    buttonInputReg |= (1u << 2); // Select
+                    break;
+                case SDL_SCANCODE_K:
+                    buttonInputReg |= (1u << 3); // Start
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case SDL_KEYUP:
+            switch(event.key.keysym.scancode){
+                case SDL_SCANCODE_D:
+                    directionInputReg &= ~(1u << 0);
+                    break;
+                case SDL_SCANCODE_A:
+                    directionInputReg &= ~(1u << 1);
+                    break;
+                case SDL_SCANCODE_W:
+                    directionInputReg &= ~(1u << 2);
+                    break;
+                case SDL_SCANCODE_S:
+                    directionInputReg &= ~(1u << 3);
+                    break;
+                case SDL_SCANCODE_O:
+                    buttonInputReg &= ~(1u << 0);
+                    break;
+                case SDL_SCANCODE_P:
+                    buttonInputReg &= ~(1u << 1);
+                    break;
+                case SDL_SCANCODE_L:
+                    buttonInputReg &= ~(1u << 2);
+                    break;
+                case SDL_SCANCODE_K:
+                    buttonInputReg &= ~(1u << 3);
+                    break;
+                default:
+                    break;
             }
             break;
         case SDL_QUIT:

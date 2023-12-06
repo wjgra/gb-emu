@@ -1,6 +1,6 @@
 #include "..\inc\gpu.h"
 
-uint32_t const static GB_COLOUR_BLACK = 0x00000000,
+uint32_t const static GB_COLOUR_BLACK = 0x000000FF,
                       GB_COLOUR_DARK  = 0x606060FF,
                       GB_COLOUR_LIGHT = 0xC0C0C0FF,
                       GB_COLOUR_WHITE = 0xFFFFFFFF;
@@ -323,6 +323,7 @@ void GPU::drawObjScanline(){
         uint8_t const objY = memoryMap.readByte(objOAMAddress + 0) - 16;
         uint8_t const objWidth = 8;
         uint8_t const objHeight = objSize() ? 2 * objWidth : objWidth;
+
         if ((objY <= getCurrentLine()) && (objY + objHeight > getCurrentLine())){
             uint8_t const objX = memoryMap.readByte(objOAMAddress + 1) - 8;
             uint8_t tileIndex = memoryMap.readByte(objOAMAddress + 2);
@@ -331,9 +332,9 @@ void GPU::drawObjScanline(){
                 tileIndex &= 0xFE;
             }
             HalfRegister const objAttributes = memoryMap.readByte(objOAMAddress + 3);
-            bool palette = objAttributes.testBit(4);
             std::array<uint32_t, 4> objPalette;
-            fillPalette(objPalette, palette ? getObjPalette0() : getObjPalette1());
+            fillPalette(objPalette, !objAttributes.testBit(4) ? getObjPalette0() : getObjPalette1());
+            objPalette[0] = 0; // First entry is transparent
 
             uint16_t tileMapDataAddress = 0x8000 + objTileSizeInBytes * tileIndex;
             uint8_t const tileYPos = objAttributes.testBit(6) ?  (objHeight - 1) - (getCurrentLine() - objY): getCurrentLine() - objY; // pos within tile
@@ -342,8 +343,8 @@ void GPU::drawObjScanline(){
             for (int i = 0 ; i < objWidth ; ++i){
                 int pixelX = objX + i;
                 if (pixelX >= 0 && pixelX <= winWidth){
-                    uint8_t const tileXPos = objAttributes.testBit(5) ? tileWidthInPixels - 1 - pixelX : pixelX;
-                    
+                    uint8_t const tileXPos = objAttributes.testBit(5) ? i : tileWidthInPixels - 1 - i;
+
                     uint8_t colourValue = getPaletteIndex(tileMapDataAddress, tileXPos);
 
                     if (colourValue > 0){

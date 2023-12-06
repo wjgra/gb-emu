@@ -31,6 +31,7 @@ public:
     void simulateBoot();
     void getState(CPUState& state);
     void setState(CPUState const& state);
+    void processInput(uint8_t buttonInput, uint8_t directionInput);
 private:
     MemoryMap& memoryMap;
     Register AF, BC, DE, HL;

@@ -2001,3 +2001,9 @@ void CPU::printRecentOpcodes(){
         }
     }
 }
+
+void CPU::processInput(uint8_t buttonInput, uint8_t directionInput){
+    if (memoryMap.processInput(buttonInput, directionInput)){
+        requestInterrupt(4);
+    }
+}

@@ -3,7 +3,7 @@
 uint16_t constexpr static UPPER_BYTEMASK = 0xFF00;
 uint16_t constexpr static LOWER_BYTEMASK = 0x00FF;
 
-MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00){
+MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00), directionInputReg{0x00}, buttonInputReg{0x00}{
 }
 
 uint8_t MemoryMap::readByte(uint16_t address) const{
@@ -19,12 +19,24 @@ uint8_t MemoryMap::readByte(uint16_t address) const{
     }
     else if (address >= 0xFEA0 && address <= 0xFEFF){
         // throw std::runtime_error("Access violation! Cannot read from [0xFEA0, 0xFEFF]");
-        // Apparently this is meant to be a no-op (and similar for writeByte below)
+        // Apparently this accessing region is meant to be a no-op (and similar for writeByte below)
         // Some games (including Tetris) use illegal reads/writes as a way to skip cycles!
         return 0x00;
     }
-    else if (address == 0xFF00){ // temp until input implemented
-        return 0xFF;
+    else if (address == 0xFF00){
+        // Process input
+        HalfRegister inputSelection = memory[address];
+        HalfRegister inputValue = 0x00;
+        if(!inputSelection.testBit(4)){
+            // D-pad enabled
+            inputValue |= ~directionInputReg;
+        }
+        if(!inputSelection.testBit(5)){
+            // Buttons enabled
+            inputValue |= ~buttonInputReg;
+        }
+
+        return 0x3F & ((inputSelection | 0x0F) & inputValue);
     }
     else{
         return memory[address];
@@ -50,8 +62,9 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
     else if(address >= 0xFEA0 && address <= 0xFEFF){
         // throw std::runtime_error("Access violation! Cannot write to [0xFEA0, 0xFEFF]");
     }
-    else if (address == 0xFF00){ // temp until input implemented
-
+    else if (address == 0xFF00){
+        // Input register - only write to bits 4 and 5
+        memory[address] = 0x30 & value; // lower bit info stored in inputRegs
     }
     else if (address == 0xFF04){
         // Attempting to write to divider register clears it
@@ -122,4 +135,17 @@ void MemoryMap::transferDMA(uint8_t value){
     for (int i = 0 ; i < 0xA0 ; ++i){
         writeByte(0xFE00 + i, readByte(address + i));
     }
+}
+
+void MemoryMap::incrementDIVRegister(){
+    memory[0xFF04]++;
+}
+
+bool MemoryMap::processInput(uint8_t buttonInput, uint8_t directionInput){
+    HalfRegister inputReg = readByte(0xFF00);
+    uint8_t dirDelta = !inputReg.testBit(4) ? (directionInput ^ directionInputReg) & directionInputReg : 0x00;
+    uint8_t butDelta = !inputReg.testBit(5) ? (buttonInput ^ buttonInputReg) & buttonInputReg : 0x00;
+    buttonInputReg = buttonInput;
+    directionInputReg = directionInput;
+    return (dirDelta > 0x00) || (butDelta > 0x00); // if true, req interrupt 0x60
 }
