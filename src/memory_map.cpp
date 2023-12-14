@@ -3,7 +3,8 @@
 uint16_t constexpr static UPPER_BYTEMASK = 0xFF00;
 uint16_t constexpr static LOWER_BYTEMASK = 0x00FF;
 
-MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00), directionInputReg{0x00}, buttonInputReg{0x00}{
+MemoryMap::MemoryMap() : memory(0x10000, 0x00), bootMemory(0x100, 0x00), directionInputReg{0x00}, buttonInputReg{0x00}, 
+    timer{.dividerCycles = timer.dividerFreq, .counterCycles = timer.counterFreq[timer.counterFreqIndex]} {
 }
 
 uint8_t MemoryMap::readByte(uint16_t address) const{
@@ -35,7 +36,6 @@ uint8_t MemoryMap::readByte(uint16_t address) const{
             // Buttons enabled
             inputValue |= ~buttonInputReg;
         }
-
         return 0x3F & ((inputSelection | 0x0F) & inputValue);
     }
     else{
@@ -69,6 +69,11 @@ void MemoryMap::writeByte(uint16_t address, uint8_t value){
     else if (address == 0xFF04){
         // Attempting to write to divider register clears it
         memory[address] = 0;
+    }
+    else if (address == 0xFF07){
+        // Only bottom three bits of timer control register are used
+        memory[address] = value & 0x07;
+        setCounterFrequency(value & 0x03);
     }
     else if (address == 0xFF46){
         // DMA transfer
@@ -137,8 +142,58 @@ void MemoryMap::transferDMA(uint8_t value){
     }
 }
 
+// Return true to trigger timer interrupt
+bool MemoryMap::updateTimerRegisters(uint16_t cycles){
+    uint16_t const timerDividerAddress = 0xFF04;
+    uint16_t const timerCounterAddress = 0xFF05;
+    uint16_t const timerModuloAddress = 0xFF06;
+    // uint16_t const timerControlAddress = 0xFF07;
+
+    // step divider
+    timer.dividerCycles -= cycles;
+    while (timer.dividerCycles <= 0){
+        timer.dividerCycles += timer.dividerFreq;
+        incrementDIVRegister();
+        if (readByte(timerDividerAddress) == 0x00){
+            break; // break on overflow
+        }
+    }
+
+    if (counterEnabled()){
+        // step counter
+        timer.counterCycles -= cycles;
+        while (timer.counterCycles <= 0){
+            timer.counterCycles += timer.counterFreq[timer.counterFreqIndex];
+            incrementCounterRegister();
+            if (readByte(timerCounterAddress) == 0x00){
+                // overflow
+                memory[timerCounterAddress] = memory[timerModuloAddress];
+                return true; // request timer interrupt
+            }
+        }
+    }
+    return false;
+}
+
 void MemoryMap::incrementDIVRegister(){
-    memory[0xFF04]++;
+    uint16_t const timerDividerAddress = 0xFF04;
+    memory[timerDividerAddress]++;
+}
+
+void MemoryMap::incrementCounterRegister(){
+    uint16_t const timerCounterAddress = 0xFF05;
+    memory[timerCounterAddress]++;
+}
+
+bool MemoryMap::counterEnabled() const{
+    uint16_t const timerControlAddress = 0xFF07;
+    HalfRegister temp = readByte(timerControlAddress);
+    return temp.testBit(2);
+}
+
+void MemoryMap::setCounterFrequency(uint8_t freq){
+    timer.counterFreqIndex = freq;
+    timer.counterCycles = timer.counterFreq[freq];
 }
 
 bool MemoryMap::processInput(uint8_t buttonInput, uint8_t directionInput){
@@ -147,5 +202,5 @@ bool MemoryMap::processInput(uint8_t buttonInput, uint8_t directionInput){
     uint8_t butDelta = !inputReg.testBit(5) ? (buttonInput ^ buttonInputReg) & buttonInputReg : 0x00;
     buttonInputReg = buttonInput;
     directionInputReg = directionInput;
-    return (dirDelta > 0x00) || (butDelta > 0x00); // if true, req interrupt 0x60
+    return (dirDelta > 0x00) || (butDelta > 0x00); // if true, request joypad interrupt
 }

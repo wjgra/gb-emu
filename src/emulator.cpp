@@ -58,10 +58,10 @@ void GBEmulator::frame(){
     if (frameTime > maxFrameDuration){
         frameTime = maxFrameDuration;
     }
-    uint32_t maxCyclesThisFrame = uint32_t(maxClockFreq * frameTime);
+    uint32_t maxCyclesThisFrame = uint32_t(1e-6 * maxClockFreq * frameTime);
     while (cyclesSinceLastUpdate < maxCyclesThisFrame){
         uint16_t cycles = cpu.executeNextOpcode();
-        updateTimerRegisters(cycles);
+        updateTimers(cycles);
         gpu.update(cycles);
         cpu.handleInterrupts(); // 5 M-cycles (per interrupt?)
         cyclesSinceLastUpdate += cycles;
@@ -83,10 +83,10 @@ void GBEmulator::frame(){
     tStart = tNow;
 }
 
-void GBEmulator::updateTimerRegisters(uint16_t cycles){
-    uint16_t const TIMA = 0xFF05;
-    uint16_t const TMA = 0xFF06;
-    uint16_t const TMC = 0xFF07;
+void GBEmulator::updateTimers(uint16_t cycles){
+    if(memoryMap.updateTimerRegisters(cycles)){
+        cpu.requestInterrupt(2);
+    }
 }
 
 void GBEmulator::handleEvents(SDL_Event const&  event){

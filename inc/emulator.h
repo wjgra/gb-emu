@@ -16,7 +16,7 @@ private:
     void finish();
     void frame();
     void handleEvents(SDL_Event const&  event);
-    void updateTimerRegisters(uint16_t cycles);
+    void updateTimers(uint16_t cycles);
     MemoryMap memoryMap;
     CPU cpu;
     GPU gpu;
@@ -26,7 +26,7 @@ private:
     std::chrono::time_point<std::chrono::high_resolution_clock> tStart, tNow;
     unsigned int const maxFrameDuration = 250000;
     bool quit = false;
-    double const maxClockFreq = 4.194304; // MHz
+    uint32_t const maxClockFreq = 4194304; // Hz
     unsigned int cyclesSinceLastUpdate = 0;
     bool verbose = false;
     uint8_t directionInputReg, buttonInputReg;

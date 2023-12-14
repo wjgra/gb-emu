@@ -337,23 +337,22 @@ void GPU::drawObjScanline(){
             objPalette[0] = 0; // First entry is transparent
 
             uint16_t tileMapDataAddress = 0x8000 + objTileSizeInBytes * tileIndex;
-            uint8_t const tileYPos = objAttributes.testBit(6) ?  (objHeight - 1) - (getCurrentLine() - objY): getCurrentLine() - objY; // pos within tile
-            tileMapDataAddress += 2 * tileYPos; // Issue: why 2?
+            uint8_t const tileYPos = objAttributes.testBit(6) ?  (objHeight - 1) - (getCurrentLine() - objY): getCurrentLine() - objY; // y pos w/in tile may be mirrored
+            tileMapDataAddress += 2 * tileYPos;
 
             for (int i = 0 ; i < objWidth ; ++i){
                 int pixelX = objX + i;
                 if (pixelX >= 0 && pixelX <= winWidth){
-                    uint8_t const tileXPos = objAttributes.testBit(5) ? i : tileWidthInPixels - 1 - i;
+                    uint8_t const tileXPos = objAttributes.testBit(5) ? i : tileWidthInPixels - 1 - i; // x pos w/in tile may be mirrored
 
                     uint8_t colourValue = getPaletteIndex(tileMapDataAddress, tileXPos);
 
                     if (colourValue > 0){
                         uint16_t index = getCurrentLine() * winWidth + pixelX;
-                        if(objAttributes.testBit(7) || !(bgBuffer[index] && 0x000000FF)){
-                            framebuffer[index] = objPalette[colourValue]; // reformulate to use iterators
+                        if(objAttributes.testBit(7) || bgBuffer[index] == bgPalette[0]){//|| !(bgBuffer[index] && 0x000000FF)){
+                            framebuffer[index] = objPalette[colourValue];
                         }
                     }
-
                 }
             }
         }
