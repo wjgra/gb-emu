@@ -1,4 +1,4 @@
-# 1996 Nintendo Game Boy Emulator
+# 1989 Nintendo Game Boy Emulator
 ## Overview
 This is an emulator for the [1989 Nintendo Game Boy](https://en.wikipedia.org/wiki/Game_Boy), written in C++ using SDL. It's accurate enough to run the one GB game I still have a cartridge for, Tetris, but does not support audio (which, for Tetris at least, is admittedly a massive loss) or memory bank switching, which extends the 16-bit address space to use additional memory supplied on the cartridge. As such, not all games are runnable.
 
