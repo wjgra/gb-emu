@@ -12,6 +12,8 @@ There are a few things I'd change if I were to do it again - for instance, using
 
 ## Dependencies and Compilation
 
+The only dependency is SDL, which is used for window creation and rendering the emulator's output.
+
 Here is a sample GCC compilation command (of course, include paths may vary), which executes with no warnings on my computer:
 ```
 g++ src\*.cpp -o "gb-emu.exe" -W -Wall -Wextra -pedantic -I "C:\SDL-release-2.26.4\include" -I "C:\w64devkit\include" "SDL2.dll" -std=c++20 -O3 -DNDEBUG
